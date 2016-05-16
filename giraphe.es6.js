@@ -5,23 +5,23 @@ import assert from 'power-assert'
 
 import _ from 'lodash'
 
-type WalkerOptions<NodeClass> = {
-   class:      Class<NodeClass>;
-   predicate:  (a: /* FIXME */ any) => any
+type WalkerOptionsWithClass<Node> = { class: Class<Node> }
+type WalkerOptionsWithPredicate = { predicate: (a: /* TYPEME */ any) => any }
+type WalkerOptions<Node> = (WalkerOptionsWithClass<Node> | WalkerOptionsWithPredicate) & {
 }
 
-const Walker = class Walker<NodeClass> {
+const Walker = class Walker<Node> {
 
-   constructor(options_or_class : Class<NodeClass> | WalkerOptions<NodeClass>){
+   constructor(options_or_class : Class<Node> | WalkerOptions<Node>){
+      var options
+      if (_.isFunction(options_or_class))
+         options = { class: options_or_class }
+      else
+         options = options_or_class
 
-      // FIXME: Why is Babel / Flow requiring the brackets around this?
-      if (_.isFunction(options_or_class)) {
-         const options = { class: options_or_class }
-      } else {
-         const options = options_or_class
-      }
+      if (options == null || (options.class == null && options.predicate == null))
+         throw new TypeError("Walker() must be instantiated with either a 'predicate' or 'class' property.")
 
-      return function walker(){
          // XXX
       } }}
 
