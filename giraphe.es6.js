@@ -22,6 +22,9 @@ const Walker = class Walker<Node> {
       if (options == null || (options.class == null && options.predicate == null))
          throw new TypeError("Walker() must be instantiated with either a 'predicate' or 'class' property.")
 
+      return function walk(root: Node){
+         if (options.class) assert(root instanceof options.class)
+
          // XXX
       } }}
 
