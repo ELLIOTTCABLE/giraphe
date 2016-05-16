@@ -51,12 +51,22 @@ describe("giraphe", function(){
          })
 
          describe(" ~ callbacks", function(){
-            it("calls passed call-backs on the root", function(){
+            it("calls a passed call-back on the root", function(){
                const Node = class {}, root = new Node, cb = sinon.spy()
                var walk = new Walker({ class: Node })
 
                walk(root, cb)
                assert(cb.calledOnce)
+            })
+
+            it("calls multiple passed call-backs", function(){
+               const Node = class {}, root = new Node
+                   , first = sinon.spy(), second = sinon.spy()
+               var walk = new Walker({ class: Node })
+
+               walk(root, first, second)
+               assert(first .calledOnce)
+               assert(second.calledOnce)
             })
          })
 

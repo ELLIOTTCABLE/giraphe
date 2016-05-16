@@ -34,7 +34,9 @@ const Walker = function<Node>(options
    return function walk(root: Node, ...callbacks: /* TYPEME */ Function[]){
       if (options.class) assert(root instanceof options.class)
 
-      // XXX
+      _.forEach(callbacks, (callback)=> {
+         const rv = callback.call(root)
+      })
    }
 }
 
