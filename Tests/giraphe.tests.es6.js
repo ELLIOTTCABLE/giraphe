@@ -41,20 +41,25 @@ describe("giraphe", function(){
 
          it("instantiates with a node-class", function(){
             class Node {}
-            var walker = new Walker({ class: Node })
-            assert(typeof walker === 'function')
+            var walk = new Walker({ class: Node })
+            assert(typeof walk === 'function')
          })
 
          it("instantiates with a predicate", function(){
-            class Node {}
-            var walker = new Walker({ predicate: new Function })
-            assert(typeof walker === 'function')
+            var walk = new Walker({ predicate: new Function })
+            assert(typeof walk === 'function')
          })
 
-         it("accepts a node-class", function(){
+         describe(" ~ callbacks", function(){
+            it("calls passed call-backs on the root", function(){
+               const Node = class {}, root = new Node
+               var walk = new Walker({ class: Node })
 
+               walk()
+            })
          })
-      })
+
+      }) // ~ a Walker instance
 
    }) // ~ The Walker constructor
 }) // giraphe
