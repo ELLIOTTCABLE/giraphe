@@ -2,29 +2,24 @@
 import Debug from 'debug'
 const debug = Debug('giraphe:tests')
 
-import chai from 'chai'
+import assert from 'power-assert'
 import sinon from 'sinon'
-import sinonChai from 'sinon-chai'
-
-const should  = chai.should()
-                chai.use(sinonChai)
 
 
 import { Walker } from '../giraphe.es6.js'
 
-describe("giraphe ~ ", function(){
-   describe("Walker", function(){
+describe("giraphe", function(){
+   describe("~ The Walker constructor", function(){
 
       it("exists", function(){
-         should.exist(Walker)
-         Walker.should.be.a('function')
+         assert.ok(Walker)
+         assert(typeof Walker === 'function')
       })
 
-      it("doesn't throw", function(){
-         class Something{}
-         ~function(){ new Walker(Something) }.should.not.throw()
+      it("accepts a node-class", function(){
+         class Node {}
+         assert.doesNotThrow(function(){ new Walker(Node) })
       })
 
-   })
-})
-
+   }) // ~ The Walker constructor
+}) // giraphe

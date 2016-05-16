@@ -1,6 +1,7 @@
 /* @flow */
 import Debug from 'debug'
 const debug = Debug('giraphe')
+import assert from 'power-assert'
 
 import _ from 'lodash'
 
