@@ -1,3 +1,6 @@
+[version]
+>=0.23.0 <1.0.0
+
 [ignore]
 
 [include]
@@ -5,4 +8,7 @@
 [libs]
 Declarations
 
+# NOTE: OCaml regexes! http://caml.inria.fr/pub/docs/manual-ocaml/libref/Str.html#TYPEregexp
+#       (and double-escape *all* backslashes.)
 [options]
+   suppress_comment=\\(.\\|\n\\)*\\(//\\|/*\\)[ \\t]*flow-disable-next-line
