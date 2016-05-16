@@ -5,28 +5,38 @@ import assert from 'power-assert'
 
 import _ from 'lodash'
 
-type WalkerOptionsWithClass<Node> = { class: Class<Node> }
-type WalkerOptionsWithPredicate = { predicate: (a: /* TYPEME */ any) => any }
-type WalkerOptions<Node> = (WalkerOptionsWithClass<Node> | WalkerOptionsWithPredicate) & {
+type WalkerOptions<Node> = {
+   whee?: string
+}
+type WalkerOptionsWithClass<Node> = WalkerOptions & { class: Class<Node> }
+type WalkerOptionsWithPredicate   = WalkerOptions & { predicate: (a: /* TYPEME */ any) => any }
+
+type walk = {
+   (x: any): any
 }
 
-const Walker = class Walker<Node> {
+const Walker = function<Node>(options
+      : Class<Node> | WalkerOptionsWithPredicate | WalkerOptionsWithClass<Node>) : walk {
 
-   constructor(options_or_class : Class<Node> | WalkerOptions<Node>){
-      var options
-      if (_.isFunction(options_or_class))
-         options = { class: options_or_class }
-      else
-         options = options_or_class
+   // FIXME: This typecasting monstrosity. No. Ygggg
+   const o = { }
+   if (_.isFunction(options))
+      options = { class: ((options:any):Class<Node>) }
+   if (null == options)
+      options = (({}:any):WalkerOptionsWithPredicate)
 
-      if (options == null || (options.class == null && options.predicate == null))
-         throw new TypeError("Walker() must be instantiated with either a 'predicate' or 'class' property.")
+   if (null != options.class)     o.class     = options.class
+   if (null != options.predicate) o.predicate = options.predicate
 
-      return function walk(root: Node){
-         if (options.class) assert(root instanceof options.class)
+   if (options.class == null && options.predicate == null)
+      throw new TypeError("Walker() must be instantiated with either a 'predicate' or 'class' property.")
 
-         // XXX
-      } }}
+   return function walk(root: Node, ...callbacks: /* TYPEME */ Function[]){
+      if (options.class) assert(root instanceof options.class)
+
+      // XXX
+   }
+}
 
 
 export { Walker }
