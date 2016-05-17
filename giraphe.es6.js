@@ -6,18 +6,39 @@ import assert from 'power-assert'
 import _ from 'lodash'
 import Mustache from 'mustache'
 
-type WalkerOptions<Node> = {
-   whee?: string
-}
-type WalkerOptionsWithClass<Node> = WalkerOptions & { class: Class<Node> }
+
+// ## Types
+
+type WalkerOptions<node> = { key?: string }
+type WalkerOptionsWithClass<node> = WalkerOptions & { class: Class<node> }
 type WalkerOptionsWithPredicate   = WalkerOptions & { predicate: (a: /* TYPEME */ any) => any }
 
+type WalkFilterback<node,collection> = (
+   current: node, parent: node
+ , supplied: collection<node>, visited: collection<node>
+ , callbacks: WalkCallback<node,collection>[]
+) => boolean | void
+
+type WalkSupplyback<node,collection> = (
+   current: node, parent: node
+ , supplied: collection<node>, visited: collection<node>
+ , callbacks: WalkCallback<node,collection>[]
+) => collection<node>
+
+type WalkCallback<node,collection> =
+      WalkFilterback<node,collection> |
+      WalkSupplyback<node,collection>
+
+type Map<t> = { [key: string]: t }
+type List<t> = t[]
+
 // FIXME: Flow, at the moment, doesn't handle returning Functions very well.
-type WalkFunction<Node> = {
-   (root?: Node, ...callbacks: /* TYPEME */ Function[]): WalkResult<Node>
+type WalkFunction<node,collection> = {
+   (root?: node, ...callbacks: WalkCallback<node,collection>[]): collection<node>
 }
 
-type WalkResult<Node> = Node[] | { [key: string]: Node }
+
+// ## Implementation
 
 const Walker = function<Node>(options
       : Class<Node> | WalkerOptionsWithPredicate | WalkerOptionsWithClass<Node>) : WalkFunction {
@@ -45,11 +66,16 @@ const Walker = function<Node>(options
    return constructWalkFunction(options)
 }
 
-const constructWalkFunction = function(options) : WalkFunction {
-   const body = undefined // XXX
+const constructWalkFunction = function<node, collection: Map<node> | List<node>>(
+         options: any // TYPEME
+      ) : WalkFunction<node,collection> {
+
+   const body = undefined // XXX ...
        , func = (null,eval)(body)
 
-   return function walk(root?: Node, ...callbacks: /* TYPEME */ Function[]) : WalkResult {
+   return function walk<node, collection>(
+            root?: node, ...callbacks: WalkCallback<node,collection>[]
+         ) : collection<node> {
       if (this === (null,eval)('this'))
          return func.apply(root, callbacks) // If function-invoked, `walk(root, ...)`
       else
