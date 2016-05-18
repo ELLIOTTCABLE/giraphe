@@ -15,15 +15,15 @@ type WalkerOptionsWithPredicate   = WalkerOptions & { predicate: (a: /* TYPEME *
 
 type WalkFilterback<node,collection> = (
    current: node, parent: node
- , supplied: collection<node>, visited: collection<node>
+ , supplied: collection, visited: collection
  , callbacks: WalkCallback<node,collection>[]
 ) => boolean | void
 
 type WalkSupplyback<node,collection> = (
    current: node, parent: node
- , supplied: collection<node>, visited: collection<node>
+ , supplied: collection, visited: collection
  , callbacks: WalkCallback<node,collection>[]
-) => collection<node>
+) => collection
 
 type WalkCallback<node,collection> =
       WalkFilterback<node,collection> |
@@ -34,7 +34,7 @@ type List<t> = t[]
 
 // FIXME: Flow, at the moment, doesn't handle returning Functions very well.
 type WalkFunction<node,collection> = {
-   (root?: node, ...callbacks: WalkCallback<node,collection>[]): collection<node>
+   (root?: node, ...callbacks: WalkCallback<node,collection>[]): collection
 }
 
 
@@ -75,7 +75,7 @@ const constructWalkFunction = function<node, collection: Map<node> | List<node>>
 
    return function walk<node, collection>(
             root?: node, ...callbacks: WalkCallback<node,collection>[]
-         ) : collection<node> {
+         ) : collection {
       if (this === (null,eval)('this'))
          return func.apply(root, callbacks) // If function-invoked, `walk(root, ...)`
       else
