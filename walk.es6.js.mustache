@@ -1,0 +1,19 @@
+// vim: ai:sts=3:sw=3:filetype=javascript
+
+// Okay, yes, before you flip your hat, this is a JavaScript file compiled through Mustache
+// templates. Yes, I already know I'm a bad person and should feel bad. Can we move past that?
+//
+// The constructor that invokes this through `eval()` passes in some useful contextual modules,
+// which we consume and close-over immediately. The actual meat is implemented in the
+// function-object that we immediately return to `constructWalkFunction`.
+//
+// Various bits and pieces of `walk()` are completely omitted from the final function, based on
+// analysis of the sorts of arguments it will be dealing with, preformed in the `Walker()`
+// constructor.
+(function(debug, assert, _, symbols){
+
+return function walk(node, parent, cachebacks, runbacks, allbacks, visited = new Object){
+   if (visited[node.id])
+      return null
+
+} })

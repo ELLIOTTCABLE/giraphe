@@ -25,3 +25,6 @@ go () { [ -n "$print_commands" ] && puts '`` '"$*" >&2 ; "$@" || exit $? ;}
 
 go babel --source-maps 'inline' --compact 'false' \
    './giraphe.es6.js' > './giraphe.js'
+
+go babel --compact 'false' --comments 'true' --retainLines 'true' \
+   './walk.es6.js.mustache' > './walk.js.mustache'
