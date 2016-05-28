@@ -1,5 +1,12 @@
 // vim: ai:sts=3:sw=3:filetype=javascript
 
+import Debug   from 'debug'
+const  debug = Debug('giraphe-walk')
+import assert  from 'power-assert'
+
+import _       from 'lodash'
+
+
 // Okay, yes, before you flip your hat, this is a JavaScript file compiled through Mustache
 // templates. Yes, I already know I'm a bad person and should feel bad. Can we move past that?
 //
@@ -16,12 +23,19 @@
 // *different* block of source-code, consisting of this file with chunks removed, is actually
 // compiled. For instance, `const` is basically a no-no; and I can't excise parts of statements,
 // unless the statements compile both with and without that part.)
-(function(debug, assert, _, symbols, $){
+export default function(symbols, $){
 
 return function walk(node, parent, cachebacks, runbacks, allbacks, visited = new Object){
+                                                                                    // <-- 85
+                                                                                 // <-- 82
+                                                             assert( null != node )
+                                                    assert( 0 !== allbacks.length )
+
    let node_key;
    /* {{#keyer?}} */ node_key = $.keyer.call(node, node) /* {{/keyer?}} */
    /* {{^keyer?}} */ node_key = node[$.key]              /* {{/keyer?}} */
+                          assert( typeof node_key === 'string' && node_key !== '' )
+
    if (visited[node_key]) return null
        visited[node_key] = node
 
@@ -92,18 +106,18 @@ return function walk(node, parent, cachebacks, runbacks, allbacks, visited = new
 
       if (aborted)  return false // If walk() returns `false`, it immediately propagates upwards,
       if (rejected) return {}    // but if it was rejected, then merely add nothing on this step
-      
-      
+
+
       let can_cache = true
 
       for (key in discovered) {
          const it = discovered[key]
              , result = walk(it, node, cachebacks, runbacks, allbacks, visited)
 
-         if (false === result) return false 
+         if (false === result) return false
 
          if (null == result) can_cache = null // invalidate the cache if *any* child was skipped
          _.assign(discovered, result)
       }
 
-      return discovered                                                             } })
+      return discovered                                                             } }
