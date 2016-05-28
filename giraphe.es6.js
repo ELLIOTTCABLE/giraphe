@@ -1,4 +1,3 @@
-/* @flow */
 import Debug from 'debug'
 const debug = Debug('giraphe')
 import assert from 'power-assert'
@@ -23,6 +22,12 @@ var Walker = function(options) {
    if (null == options)
       options = {}
 
+   if (null == options.key) {
+      if (null == key)
+         throw new TypeError("Walker() must be instantiated with "
+                           + "a string-ish (or invokable) 'key' property.")
+      options.key = key
+   }
    if (typeof options.key === 'function') {
       options.keyer, options.key = options.key, null
       options['keyer?'] = true
