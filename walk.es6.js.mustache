@@ -10,10 +10,100 @@
 // Various bits and pieces of `walk()` are completely omitted from the final function, based on
 // analysis of the sorts of arguments it will be dealing with, preformed in the `Walker()`
 // constructor.
-(function(debug, assert, _, symbols){
+//
+// (Of note, there's also some nasty backflips to satisfy Babel; this entire file has to *transpile*
+// as if it were, vaguely, a single block of source-code ... even though, at runtime, a completely
+// *different* block of source-code, consisting of this file with chunks removed, is actually
+// compiled. For instance, `const` is basically a no-no; and I can't excise parts of statements,
+// unless the statements compile both with and without that part.)
+(function(debug, assert, _, symbols, $){
 
 return function walk(node, parent, cachebacks, runbacks, allbacks, visited = new Object){
-   if (visited[node.id])
-      return null
+   let node_key;
+   /* {{#keyer?}} */ node_key = $.keyer.call(node, node) /* {{/keyer?}} */
+   /* {{^keyer?}} */ node_key = node[$.key]              /* {{/keyer?}} */
+   if (visited[node_key]) return null
+       visited[node_key] = node
 
-} })
+   let aborted = no
+
+   const discovered = new Object
+       , rejected = ! _.all(runbacks, cb => {
+      const rv = cb.call(node, node, discoverer, discovered, visited, allbacks)
+
+      // If it returns a boolean, or nothing at all, then it's a ‘filter-back’,
+           if (rv === false)              return false
+      else if (null == rv || rv === true) return true
+
+      // and ‘abort-backs’ are a special case,
+      else if (rv === symbols.abortIteration) {
+         aborted = yes
+         return false                                                               }
+
+      // else, it's a ‘supply-back’!
+
+      // FIXME: D.R.Y. this ffs
+      /* {{#predicate?}} */
+      else if ($.predicate.call(rv, rv)) {
+         let rv_key;
+         /* {{#keyer?}} */ rv_key = $.keyer.call(rv, rv) /* {{/keyer?}} */
+         /* {{^keyer?}} */ rv_key = rv[$.key]            /* {{/keyer?}} */
+         discovered[rv_key] = rv
+      }
+      /* {{/predicate?}} {{^predicate?}} */
+      else if (rv instanceof $.class) {
+         let rv_key;
+         /* {{#keyer?}} */ rv_key = $.keyer.call(rv, rv) /* {{/keyer?}} */
+         /* {{^keyer?}} */ rv_key = rv[$.key]            /* {{/keyer?}} */
+         discovered[rv_key] = rv
+      }
+      /* {{/predicate?}} */
+
+
+      if (_.isArray(rv)) {
+         /* {{#predicate?}} */
+         assert( _.all(rv, element => $.predicate.call(element, element)) )
+         /* {{/predicate?}} {{^predicate?}} */
+         assert( _.all(rv, element => element instanceof $.class) )
+         /* {{/predicate?}} */
+
+         const rvs = _.reduce(rv, (rvs, element) => {
+            let element_key;
+            /* {{#keyer?}} */ element_key = $.keyer.call(element, element) /* {{/keyer?}} */
+            /* {{^keyer?}} */ element_key = node[$.key]                    /* {{/keyer?}} */
+
+            acc[element_key] = v
+
+            return acc
+         }, new Object)
+         _.assign(discovered, rvs)                                                  }
+
+
+      else {
+         /* {{#predicate?}} */
+         assert( _.all(rv, element => $.predicate.call(element, element)) )
+         /* {{/predicate?}} {{^predicate?}} */
+         assert( _.all(rv, element => element instanceof $.class) )
+         /* {{/predicate?}} */
+
+         _.assign(discovered, rv)                                                   }
+
+      return rv                                                                     })
+
+      if (aborted)  return false // If walk() returns `false`, it immediately propagates upwards,
+      if (rejected) return {}    // but if it was rejected, then merely add nothing on this step
+      
+      
+      let can_cache = true
+
+      for (key in discovered) {
+         const it = discovered[key]
+             , result = walk(it, node, cachebacks, runbacks, allbacks, visited)
+
+         if (false === result) return false 
+
+         if (null == result) can_cache = null // invalidate the cache if *any* child was skipped
+         _.assign(discovered, result)
+      }
+
+      return discovered                                                             } })
