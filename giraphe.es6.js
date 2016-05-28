@@ -11,7 +11,9 @@ import { readFileSync } from 'fs'
 // XXX: Does this need to be instantiated?
 Mustache.escape = function(s){ return s }
 
-let walkTemplate = readFileSync(resolve(__dirname, 'walk.js.mustache'), 'utf8')
+const walkTemplatePath = resolve(__dirname, 'walk.js.mustache')
+
+let walkTemplate = readFileSync(walkTemplatePath, 'utf8')
 assert(typeof walkTemplate === 'string' && 0 !== walkTemplate.length)
 process.nextTick(()=> Mustache.parse(walkTemplate))
 
@@ -55,12 +57,13 @@ const constructWalkFunction = function(options){
    const body = Mustache.render(walkTemplate, options)
    assert(typeof body === 'string' && 0 !== body.length)
 
-   const wrap = require_eval(body, true).default
+   const wrap = require_eval(body, walkTemplatePath, {}, true).default
    assert(typeof wrap === 'function')
 
    const func = wrap(symbols, options)
 
    return function invokeWalk(root, ...callbacks){
+
       // If method-invoked, `root.walk(...)`
       if (this !== (null,eval)('this')) {
          callbacks.unshift(root)

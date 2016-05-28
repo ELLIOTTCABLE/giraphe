@@ -10,7 +10,6 @@
 
 puts() { printf %s\\n "$@" ;}
 pute() { printf %s\\n "~~ $*" >&2 ;}
-
 # FIXME: This should support *excluded* modules with a minus, as per `node-debug`:
 #        https://github.com/visionmedia/debug
 if echo "$DEBUG" | grep -qE '(^|,\s*)(\*|mocha-before-this)($|,)'; then
