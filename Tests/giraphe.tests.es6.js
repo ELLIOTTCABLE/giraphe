@@ -60,7 +60,8 @@ describe("giraphe", function(){
 
          describe(" ~ callbacks", function(){
             it("calls a passed call-back on the root", function(){
-               const Node = class {}, root = new Node, cb = sinon.spy()
+               const Node = class {}, root = new Node; root.id = '123'
+               const cb = sinon.spy()
                var walk = new Walker({ class: Node, key: 'id' })
 
                walk(root, cb)
@@ -68,8 +69,8 @@ describe("giraphe", function(){
             })
 
             it("calls multiple passed call-backs", function(){
-               const Node = class {}, root = new Node
-                   , first = sinon.spy(), second = sinon.spy()
+               const Node = class {}, root = new Node; root.id = '123'
+               const first = sinon.spy(), second = sinon.spy()
                var walk = new Walker({ class: Node, key: 'id' })
 
                walk(root, first, second)
