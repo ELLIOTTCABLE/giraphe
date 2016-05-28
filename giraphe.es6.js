@@ -13,6 +13,7 @@ Mustache.escape = function(s){ return s }
 
 const walkTemplate = readFileSync(resolve(__dirname, 'walk.js.mustache'), 'utf8')
 Mustache.parse(walkTemplate)
+assert(typeof walkTemplate === 'string' && 0 !== walkTemplate.length)
 
 
 var Walker = function(options) {
@@ -22,15 +23,19 @@ var Walker = function(options) {
    if (null == options)
       options = {}
 
-   if (typeof options.key === 'function')
+   if (typeof options.key === 'function') {
       options.keyer, options.key = options.key, null
+      options['keyer?'] = true
+   }
 
    if (options.class == null && options.predicate == null)
       throw new TypeError("Walker() must be instantiated with "
                         + "either a 'predicate' or 'class' property.")
+   options['predicate?'] = (null != options.predicate)
 
    return constructWalkFunction(options) }
 
+// FIXME: Make proper Symbols. :P
 const symbols = {
    abortIteration: Walker.abortIteration  = 'abortIteration'
  , walkCache:      Walker.walkCache       = '::walk__do_cache'
@@ -42,7 +47,12 @@ const symbols = {
 const constructWalkFunction = function(options){
    assert(null != options)
    const body = Mustache.render(walkTemplate, options)
-       , func = (null,eval)(body)(debug, assert, _, symbols)
+   assert(typeof body === 'string' && 0 !== body.length)
+
+   const wrap = (null,eval)(body)
+   assert(typeof wrap === 'function')
+
+   const func = wrap(debug, assert, _, symbols, options)
 
    return function invokeWalk(root, ...callbacks){
       // If method-invoked, `root.walk(...)`
