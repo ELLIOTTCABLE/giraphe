@@ -65,12 +65,13 @@ const constructWalkFunction = function(options){
    return function invokeWalk(root, ...callbacks){
 
       // If method-invoked, `root.walk(...)`
-      if (this !== (null,eval)('this')) {
+      if (typeof this !== 'undefined' && this !== (null,eval)('this')) {
          callbacks.unshift(root)
          root = this
       }
 
-      return func(root, null, callbacks)
+      debug(`invoking walk([${ callbacks.length }]):`, root)
+      return func(root, null, [], callbacks, callbacks)
    }
 }
 

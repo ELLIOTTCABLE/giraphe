@@ -23,13 +23,12 @@ import _       from 'lodash'
 // *different* block of source-code, consisting of this file with chunks removed, is actually
 // compiled. For instance, `const` is basically a no-no; and I can't excise parts of statements,
 // unless the statements compile both with and without that part.)
-export default function(symbols, $){
+export default function(symbols, $){                               debug( 'walk() constructed:', $ )
 
 return function walk(node, parent, cachebacks, runbacks, allbacks, visited = new Object){
-                                                                                    // <-- 85
-                                                                                 // <-- 82
-                                                             assert( null != node )
-                                                    assert( 0 !== allbacks.length )
+                                                                            debug( 'walk():', node )
+                                                                              assert( null != node )
+                                                                     assert( 0 !== allbacks.length )
 
    let node_key;
    /* {{#keyer?}} */ node_key = $.keyer.call(node, node) /* {{/keyer?}} */
@@ -39,11 +38,11 @@ return function walk(node, parent, cachebacks, runbacks, allbacks, visited = new
    if (visited[node_key]) return null
        visited[node_key] = node
 
-   let aborted = no
+   let aborted = false
 
    const discovered = new Object
-       , rejected = ! _.all(runbacks, cb => {
-      const rv = cb.call(node, node, discoverer, discovered, visited, allbacks)
+       , rejected = ! _.every(runbacks, cb => {
+      const rv = cb.call(node, node, parent, discovered, visited, allbacks)
 
       // If it returns a boolean, or nothing at all, then it's a ‘filter-back’,
            if (rv === false)              return false
@@ -52,7 +51,7 @@ return function walk(node, parent, cachebacks, runbacks, allbacks, visited = new
       // and ‘abort-backs’ are a special case,
       else if (rv === symbols.abortIteration) {
          aborted = yes
-         return false                                                               }
+         return false                                                                              }
 
       // else, it's a ‘supply-back’!
 
@@ -76,9 +75,9 @@ return function walk(node, parent, cachebacks, runbacks, allbacks, visited = new
 
       if (_.isArray(rv)) {
          /* {{#predicate?}} */
-         assert( _.all(rv, element => $.predicate.call(element, element)) )
+         assert( _.every(rv, element => $.predicate.call(element, element)) )
          /* {{/predicate?}} {{^predicate?}} */
-         assert( _.all(rv, element => element instanceof $.class) )
+         assert( _.every(rv, element => element instanceof $.class) )
          /* {{/predicate?}} */
 
          const rvs = _.reduce(rv, (rvs, element) => {
@@ -90,19 +89,19 @@ return function walk(node, parent, cachebacks, runbacks, allbacks, visited = new
 
             return acc
          }, new Object)
-         _.assign(discovered, rvs)                                                  }
+         _.assign(discovered, rvs)                                                                 }
 
 
       else {
          /* {{#predicate?}} */
-         assert( _.all(rv, element => $.predicate.call(element, element)) )
+         assert( _.every(rv, element => $.predicate.call(element, element)) )
          /* {{/predicate?}} {{^predicate?}} */
-         assert( _.all(rv, element => element instanceof $.class) )
+         assert( _.every(rv, element => element instanceof $.class) )
          /* {{/predicate?}} */
 
-         _.assign(discovered, rv)                                                   }
+         _.assign(discovered, rv)                                                                  }
 
-      return rv                                                                     })
+      return rv                                                                                   })
 
       if (aborted)  return false // If walk() returns `false`, it immediately propagates upwards,
       if (rejected) return {}    // but if it was rejected, then merely add nothing on this step
@@ -120,4 +119,4 @@ return function walk(node, parent, cachebacks, runbacks, allbacks, visited = new
          _.assign(discovered, result)
       }
 
-      return discovered                                                             } }
+      return discovered                                                                          } }
