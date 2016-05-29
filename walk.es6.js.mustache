@@ -110,7 +110,7 @@ return function walk(node, parent, cachebacks, runbacks, allbacks, visited = new
       let can_cache = true
 
       for (key in discovered) {
-         const it = discovered[key]
+         const it     = discovered[key]
              , result = walk(it, node, cachebacks, runbacks, allbacks, visited)
 
          if (false === result) return false
@@ -119,4 +119,5 @@ return function walk(node, parent, cachebacks, runbacks, allbacks, visited = new
          _.assign(discovered, result)
       }
 
+      discovered[node_key] = node
       return discovered                                                                          } }
