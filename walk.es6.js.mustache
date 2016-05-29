@@ -25,24 +25,24 @@ import _       from 'lodash'
 // unless the statements compile both with and without that part.)
 export default function(symbols, $){                               debug( 'walk() constructed:', $ )
 
-return function walk(node, parent, cachebacks, runbacks, allbacks, visited = new Object){
-                                                                            debug( 'walk():', node )
-                                                                              assert( null != node )
+return function walk(current, parent, cachebacks, runbacks, allbacks, visited = new Object){
+                                                                         debug( 'walk():', current )
+                                                                           assert( null != current )
                                                                      assert( 0 !== allbacks.length )
 
-   let node_key;
-   /* {{#keyer?}} */ node_key = $.keyer.call(node, node) /* {{/keyer?}} */
-   /* {{^keyer?}} */ node_key = node[$.key]              /* {{/keyer?}} */
-                          assert( typeof node_key === 'string' && node_key !== '' )
+   let key_current;
+   /* {{#keyer?}} */ key_current = $.keyer.call(current, current) /* {{/keyer?}} */
+   /* {{^keyer?}} */ key_current = current[$.key]                 /* {{/keyer?}} */
+                                     assert( typeof key_current === 'string' && key_current !== '' )
 
-   if (visited[node_key]) return null
-       visited[node_key] = node
+   if (visited[key_current]) return null
+       visited[key_current] = current
 
    let aborted = false
 
    const discovered = new Object
        , rejected = ! _.every(runbacks, cb => {
-      const rv = cb.call(node, node, parent, discovered, visited, allbacks)
+      const rv = cb.call(current, current, parent, discovered, visited, allbacks)
 
       // If it returns a boolean, or nothing at all, then it's a ‘filter-back’,
            if (rv === false)              return false
@@ -80,12 +80,12 @@ return function walk(node, parent, cachebacks, runbacks, allbacks, visited = new
          assert( _.every(rv, element => element instanceof $.class) )
          /* {{/predicate?}} */
 
-         const rvs = _.reduce(rv, (rvs, element) => {
-            let element_key;
-            /* {{#keyer?}} */ element_key = $.keyer.call(element, element) /* {{/keyer?}} */
-            /* {{^keyer?}} */ element_key = node[$.key]                    /* {{/keyer?}} */
+         const rvs = _.reduce(rv, (rvs, ele) => {
+            let key_ele;
+            /* {{#keyer?}} */ key_ele = $.keyer.call(ele, ele) /* {{/keyer?}} */
+            /* {{^keyer?}} */ key_ele = ele[$.key]             /* {{/keyer?}} */
 
-            acc[element_key] = v
+            acc[key_ele] = v
 
             return acc
          }, new Object)
@@ -94,9 +94,9 @@ return function walk(node, parent, cachebacks, runbacks, allbacks, visited = new
 
       else {
          /* {{#predicate?}} */
-         assert( _.every(rv, element => $.predicate.call(element, element)) )
+         assert( _.every(rv, ele => $.predicate.call(ele, ele)) )
          /* {{/predicate?}} {{^predicate?}} */
-         assert( _.every(rv, element => element instanceof $.class) )
+         assert( _.every(rv, ele => ele instanceof $.class) )
          /* {{/predicate?}} */
 
          _.assign(discovered, rv)                                                                  }
@@ -109,9 +109,9 @@ return function walk(node, parent, cachebacks, runbacks, allbacks, visited = new
 
       let can_cache = true
 
-      for (key in discovered) {
-         const it     = discovered[key]
-             , result = walk(it, node, cachebacks, runbacks, allbacks, visited)
+      for (key_ele in discovered) {
+         const ele    = discovered[key_ele]
+             , result = walk(ele, current, cachebacks, runbacks, allbacks, visited)
 
          if (false === result) return false
 
@@ -119,5 +119,5 @@ return function walk(node, parent, cachebacks, runbacks, allbacks, visited = new
          _.assign(discovered, result)
       }
 
-      discovered[node_key] = node
+      discovered[key_current] = current
       return discovered                                                                          } }
