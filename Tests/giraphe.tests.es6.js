@@ -1,5 +1,6 @@
 import Debug from 'debug'
-const debug = Debug('giraphe:tests')
+import _     from 'lodash'
+const  debug = Debug('giraphe:tests')
 
 import assert from 'power-assert'
 import sinon, { match } from 'sinon'
@@ -148,3 +149,139 @@ describe("giraphe", function(){
 
    }) // ~ The Walker constructor
 }) // giraphe
+
+
+const id = Symbol('id')
+const possibilities = [
+   // Matched pairs; the first element being keys to add to the constructed `options` argument, and
+   // the second being methods / keys to add to the options-constructor as context (i.e. the first
+   // sets `$().class`, the second sets `$.new()`.)
+   //
+   // The first option is the default, when ‘PERMUTATE’ isn't set.
+   [[{ class: class Node{} }
+    ,{ has_class: true,       new: function(){ return new Node } }                              ]
+   ,[{ predicate: new Function }
+    ,{ has_predicate: true,   new: function(){ return new Object } }                            ]]
+
+ , [[{ key: 'id' }
+    ,{ has_key: true,         key: it =>{ it['id'] = rand(); return it } }                      ]
+   ,[{ key: it => it[id] }
+    ,{ has_keyer: true,       key: it =>{ it[id] = rand(); return it   } }                      ]]
+
+// FIXME: Hm. `key` (whether function or string) is obviously only meaningful for Object-map
+// interfaces; this will need to be tweaked not to permutate over other combinations.
+//, [[ { something_to_do_with_sets: true } ], [ { something_to_do_with_maps: false } ]]
+//
+  , [[ { cache: false } ], [ { cache: true } ]]
+]
+
+let permutations;
+
+const PERMUTATE = process.env['PERMUTATE'] && process.env['PERMUTATE'] !== 'NO'
+if   (PERMUTATE) {
+   // If the `PERMUTATE=yes` ENV variable is set at test-time, then we run *every* combination of
+   // settings for most / all tests. This function recursively generates a set of possible
+   // permutations. It's not cached or anything, so it's slow as fuck; but it's a one-time setup
+   // cost, so meh.
+   function permutate(possibilities){
+      const results  = new Array
+          , rest     = possibilities.slice()
+          , set      = rest.shift()
+
+      debug('Generating *permutations* for `possibilities[-'+possibilities.length+']`')
+
+      for (const possibility of set) {
+         const options = possibility[0]
+             , helpers = possibility[1]
+
+         if (0 === rest.length) {
+            const result = { options: {}, helpers: {} }
+            _.assign(result.options, options)
+            _.assign(result.helpers, helpers)
+
+            results.push(result) }
+
+         else for (const sub of permutate(rest)) {
+            const result = { options: {}, helpers: {} }
+            _.assign(result.options, options, sub.options)
+            _.assign(result.helpers, helpers, sub.helpers)
+
+            results.push(result) }
+      }
+
+      return results }
+
+   permutations = permutate(possibilities) }
+
+else {
+   // If the `PERMUTATE=yes` ENV variable is *not* set, we're only going to try the *default*
+   // settings with each individual setting-under-test (i.e. we'll test the optional `predicate:`
+   // configuration-option, but only with the defaults of `cache: false` and `key: id`.) This will
+   // result in a linear, instead of exponential, number of tests to evaluate. :P
+   function combine(possibilities){
+      const results = new Array
+
+      let defaults_seen;
+      for (let i = 0; i < possibilities.length; i++) {
+         const set = possibilities[i]
+
+         if (defaults_seen) set.shift()
+         defaults_seen = true
+
+         debug('Generating combinations for `possibilities['+i+'] ('+set.length+'x)`')
+
+         for (const possibility of set) {
+            const result  = { options: {}, helpers: {} }
+                , options = possibility[0]
+                , helpers = possibility[1]
+
+            for (let k = 1; k < possibilities.length; k++) {
+               const def = possibilities[k][0]
+                   , def_options = possibility[0]
+                   , def_helpers = possibility[1]
+
+               _.assign(result.options, def_options)
+               _.assign(result.helpers, def_helpers) }
+
+            _.assign(result.options, options)
+            _.assign(result.helpers, helpers)
+
+            results.push(result) }
+      }
+
+      return results }
+
+   permutations = combine(possibilities) }
+
+debug('Permutating '+permutations.length+' permutations')
+
+// I produce tests generatively, iterating over the possible forms of invocation. (Some tests
+// are made exclusive to a particular form via a conditional, or by being left out of the
+// iteration.)
+//
+// Each invocation of the `body`, presuambly full of test-cases, receives an argument `$` that
+// behaves as follows:
+//
+// 1. When called directly `$()`, constructs a new `options` object as permuted across the above
+//    `possibilities` (i.e. something like `{ class: <blah>, key: 'id', ... }`),
+// 3. but when called with a `String`, i.e. `$("Hello")`, it suffixes that string with a description
+// 2. and exposes all of the helpers from the above permutations, i.e. `$.new()` or `$.key()`.
+function testAll(body){
+
+   for (const p in permutations) {
+      const $ = function(given_arg){
+         if (null != given_arg) {
+            
+         }
+         else {
+
+         }
+      }
+
+      body.call(null, $)
+   }
+}
+
+function rand(){
+   return _.random(0, Number.MAX_SAFE_INTEGER)
+}
