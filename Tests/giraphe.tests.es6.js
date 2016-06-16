@@ -5,10 +5,15 @@ const  debug = Debug('giraphe:tests')
 import assert from 'power-assert'
 import sinon, { match } from 'sinon'
 
-
 import { Walker } from '../giraphe.es6.js'
 
-describe("giraphe", function(){
+
+let permutations = generatePermutations()
+
+permuteTests(function($){
+debug($("Adding permuted tests"))
+
+describe($("giraphe"), function(){
    describe("~ The Walker constructor", function(){
 
       it("exists", function(){
@@ -150,110 +155,115 @@ describe("giraphe", function(){
    }) // ~ The Walker constructor
 }) // giraphe
 
+}) // permuteTests
 
-const id = Symbol('id')
-const possibilities = [
-   // Matched pairs; the first element being keys to add to the constructed `options` argument, and
-   // the second being methods / keys to add to the options-constructor as context (i.e. the first
-   // sets `$().class`, the second sets `$.new()`.)
-   //
-   // The first option is the default, when ‘PERMUTATE’ isn't set.
-   [[{ class: class Node{} }
-    ,{ has_class: true,       new: function(){ return new Node } }                              ]
-   ,[{ predicate: new Function }
-    ,{ has_predicate: true,   new: function(){ return new Object } }                            ]]
 
- , [[{ key: 'id' }
-    ,{ has_key: true,         key: it =>{ it['id'] = rand(); return it } }                      ]
-   ,[{ key: it => it[id] }
-    ,{ has_keyer: true,       key: it =>{ it[id] = rand(); return it   } }                      ]]
+function generatePermutations(){
+   const id = Symbol('id')
+   const permutables = [
+      // Matched pairs; the first element being keys to add to the constructed `options` argument,
+      // and the second being methods / keys to add to the options-constructor as context (i.e. the
+      // first sets `$().class`, the second sets `$.new()`.)
+      //
+      // The first option is the default, when ‘PERMUTATE’ isn't set.
+      [  {  desc: 'class', opts: { class: class Node{} }
+         ,  helpers: {  has_class: true
+                     ,  new: function(){ return new Node }                                      }}
+      ,  {  desc: 'pred',  opts: { predicate: new Function }
+         ,  helpers: {  has_predicate: true
+                     ,  new: function(){ return new Object }                                    }}]
 
-// FIXME: Hm. `key` (whether function or string) is obviously only meaningful for Object-map
-// interfaces; this will need to be tweaked not to permutate over other combinations.
-//, [[ { something_to_do_with_sets: true } ], [ { something_to_do_with_maps: false } ]]
-//
-  , [[ { cache: false } ], [ { cache: true } ]]
-]
+    , [  {  desc: 'key',   opts: { key: 'id' }
+         ,  helpers: {  has_key: true
+                     ,  key: it =>{ it['id'] = rand(); return it }                              }}
+      ,  {  desc: 'keyer', opts: { key: it => it[id] }
+         ,  helpers: {  has_keyer: true,
+                        key: it =>{ it[id] = rand(); return it   }                              }}]
 
-let permutations;
+    , [  { desc: null,    opts: {} }
+      ,  { desc: 'cache', opts: {cache: true} }                                                 ]
+   ]
 
-const PERMUTATE = process.env['PERMUTATE'] && process.env['PERMUTATE'] !== 'NO'
-if   (PERMUTATE) {
-   // If the `PERMUTATE=yes` ENV variable is set at test-time, then we run *every* combination of
-   // settings for most / all tests. This function recursively generates a set of possible
-   // permutations. It's not cached or anything, so it's slow as fuck; but it's a one-time setup
-   // cost, so meh.
-   function permutate(possibilities){
-      const results  = new Array
-          , rest     = possibilities.slice()
-          , set      = rest.shift()
+   // FIXME: Hm. `key` (whether function or string) is obviously only meaningful for Object-map
+   // interfaces; this will need to be tweaked not to permutate over other combinations.
+   //, [[ { something_to_do_with_sets: true } ], [ { something_to_do_with_maps: false } ]]
 
-      debug('Generating *permutations* for `possibilities[-'+possibilities.length+']`')
+   const PERMUTATE = process.env['PERMUTATE'] && process.env['PERMUTATE'] !== 'no'
+   if   (PERMUTATE) {
+      debug("Generating full set of permutations")
 
-      for (const possibility of set) {
-         const options = possibility[0]
-             , helpers = possibility[1]
+      // If the `PERMUTATE=yes` ENV variable is set at test-time, then we run *every* combination of
+      // settings for most / all tests. This function recursively generates a set of possible
+      // permutations. It's not cached or anything, so it's slow as fuck; but it's a one-time setup
+      // cost, so meh.
+      function permutate(permutables){
+         const results        = new Array
+             , rest           = permutables.slice()
+             , possibilities  = rest.shift()
 
-         if (0 === rest.length) {
-            const result = { options: {}, helpers: {} }
-            _.assign(result.options, options)
-            _.assign(result.helpers, helpers)
+         debug('Generating permutations for `permutables[-'+permutables.length+']`')
 
-            results.push(result) }
+         for (const possibility of possibilities) {
+            if (0 === rest.length) {
+               const    permutation = { labels: [], options: {}, helpers: {} }
+               _.assign(permutation.options, possibility.opts)
+               _.assign(permutation.helpers, possibility.helpers)
+               permutation.labels.push(possibility.desc)
 
-         else for (const sub of permutate(rest)) {
-            const result = { options: {}, helpers: {} }
-            _.assign(result.options, options, sub.options)
-            _.assign(result.helpers, helpers, sub.helpers)
+               results.push(permutation) }
 
-            results.push(result) }
-      }
+            else for (const sub of permutate(rest)) {
+               const    permutation = { labels: [], options: {}, helpers: {} }
+               _.assign(permutation.options, possibility.opts,    sub.options)
+               _.assign(permutation.helpers, possibility.helpers, sub.helpers)
+               permutation.labels.push(possibility.desc, ...sub.labels)
 
-      return results }
+               results.push(permutation) }
+         }
 
-   permutations = permutate(possibilities) }
+         return results }
 
-else {
-   // If the `PERMUTATE=yes` ENV variable is *not* set, we're only going to try the *default*
-   // settings with each individual setting-under-test (i.e. we'll test the optional `predicate:`
-   // configuration-option, but only with the defaults of `cache: false` and `key: id`.) This will
-   // result in a linear, instead of exponential, number of tests to evaluate. :P
-   function combine(possibilities){
-      const results = new Array
+      return permutate(permutables) }
 
-      let defaults_seen;
-      for (let i = 0; i < possibilities.length; i++) {
-         const set = possibilities[i]
+   else {
+      debug("Generating limited set of options-combinations, instead of full permutations")
 
-         if (defaults_seen) set.shift()
-         defaults_seen = true
+      // If the `PERMUTATE=yes` ENV variable is *not* set, we're only going to try the *default*
+      // settings with each individual setting-under-test (i.e. we'll test the optional `predicate:`
+      // configuration-option, but only with the defaults of `cache: false` and `key: id`.) This
+      // will result in a linear, instead of exponential, number of tests to evaluate. :P
+      function combine(permutables){
+         const results = new Array
 
-         debug('Generating combinations for `possibilities['+i+'] ('+set.length+'x)`')
+         let defaults_seen;
+         for (let i = 0; i < permutables.length; i++) {
+            const possibilities = permutables[i]
 
-         for (const possibility of set) {
-            const result  = { options: {}, helpers: {} }
-                , options = possibility[0]
-                , helpers = possibility[1]
+            if (defaults_seen) possibilities.shift()
+            defaults_seen = true
 
-            for (let k = 1; k < possibilities.length; k++) {
-               const def = possibilities[k][0]
-                   , def_options = possibility[0]
-                   , def_helpers = possibility[1]
+            debug('Generating combinations for `permutables['+i+'] ('+possibilities.length+'x)`')
 
-               _.assign(result.options, def_options)
-               _.assign(result.helpers, def_helpers) }
+            for (const possibility of possibilities) {
+               const permutation  = { labels: [], options: {}, helpers: {} }
 
-            _.assign(result.options, options)
-            _.assign(result.helpers, helpers)
+               for (let k = 0; k < permutables.length; k++) {
+                  if (k == i) continue;
+                  const normal_case = permutables[k][0]
 
-            results.push(result) }
-      }
+                  _.assign(permutation.options, normal_case.opts)
+                  _.assign(permutation.helpers, normal_case.helpers) }
 
-      return results }
+               _.assign(permutation.options, possibility.opts)
+               _.assign(permutation.helpers, possibility.helpers)
 
-   permutations = combine(possibilities) }
+               results.push(permutation) }
+         }
 
-debug('Permutating '+permutations.length+' permutations')
+         return results }
+
+      return combine(permutables) }
+}
 
 // I produce tests generatively, iterating over the possible forms of invocation. (Some tests
 // are made exclusive to a particular form via a conditional, or by being left out of the
@@ -263,23 +273,31 @@ debug('Permutating '+permutations.length+' permutations')
 // behaves as follows:
 //
 // 1. When called directly `$()`, constructs a new `options` object as permuted across the above
-//    `possibilities` (i.e. something like `{ class: <blah>, key: 'id', ... }`),
+//    `permutables` (i.e. something like `{ class: <blah>, key: 'id', ... }`),
 // 3. but when called with a `String`, i.e. `$("Hello")`, it suffixes that string with a description
 // 2. and exposes all of the helpers from the above permutations, i.e. `$.new()` or `$.key()`.
-function testAll(body){
+function permuteTests(body){
+   debug('Permutating '+permutations.length+' test-permutations')
 
-   for (const p in permutations) {
+   for (const p of permutations) {
       const $ = function(given_arg){
-         if (null != given_arg) {
-            
-         }
-         else {
+         if (typeof given_arg == 'string') {
+            const name = _.compact(p.labels).join('/')
+            return `${given_arg} (${name})` }
 
-         }
-      }
+         let options
+         if (null != given_arg)
+             options = given_arg
+         else
+             options = new Object
 
+         _.assign(options, p.opts)
+         return options }
+
+      _.assign($, p.helpers)
       body.call(null, $)
    }
+
 }
 
 function rand(){
