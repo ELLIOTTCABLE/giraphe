@@ -10,10 +10,8 @@ import { Walker } from '../giraphe.es6.js'
 
 let permutations = generatePermutations()
 
-permuteTests(function($){
-debug($("Adding permuted tests"))
 
-describe($("giraphe"), function(){
+describe("giraphe", function(){
    describe("~ The Walker constructor", function(){
 
       it("exists", function(){
@@ -50,38 +48,48 @@ describe($("giraphe"), function(){
          assert.throws(function(){ new Walker(   ) })
       })
 
-      describe(" ~ a walk function", function(){
 
-         it("instantiates with a node-class", function(){
-            class Node {}
-            var walk = new Walker({ class: Node, key: 'id' })
+   }) // ~ The Walker constructor
+
+   permuteTests(function($){
+      debug($("Adding permuted tests"))
+
+      describe($("~ a walk function"), function(){
+
+         it($("instantiates"), function(){
+            var walk = new Walker( $() )
             assert(typeof walk === 'function')
          })
 
-         it("instantiates with a predicate", function(){
-            var walk = new Walker({ predicate: new Function, key: 'id' })
-            assert(typeof walk === 'function')
+       //if (!$.has_map)
+         it("returns an object representing a mapping", function(){
+            const root = $.new(); $.key(root)
+            var walk = new Walker( $() )
+
+            var result = walk(root, new Function)
+            assert(null != result && typeof result === 'object')
          })
 
-         it("returns a node-mapping", function(){
-            const Node = class {}, root = new Node; root.id = '123'
-            var walk = new Walker({ class: Node, key: 'id' })
+         if ($.has_class)
+         it("returns a mapping of the given class", function(){
+            const root = $.new(); $.key(root)
+            var walk = new Walker( $() )
 
             var result = walk(root, new Function)
             assert(null != result && typeof result === 'object')
          })
 
          it("collects the root node, if it's not rejected", function(){
-            const Node = class {}, root = new Node; root.id = '123'
-            var walk = new Walker({ class: Node, key: 'id' })
+            const root = $.new(), key = $.key(root)
+            var walk = new Walker( $() )
 
-            var result = walk(root, new Function)
-            assert(result[root.id] === root)
+            var result = walk(root, function(){ return undefined })
+            assert(result[key] === root)
          })
 
          it.skip("returns the collected nodes")
 
-         describe(" ~ callbacks", function(){ const they = it
+         describe("~ callbacks", function(){ const they = it
             they("get called on the passed initial node", function(){
                const Node = class {}, root = new Node; root.id = '123'
                const cb = sinon.spy()
@@ -150,12 +158,11 @@ describe($("giraphe"), function(){
             })
          })
 
-      }) // ~ a Walker instance
+      }) // ~ a walk function
+   }) // permuteTests
 
-   }) // ~ The Walker constructor
 }) // giraphe
 
-}) // permuteTests
 
 
 function generatePermutations(){
