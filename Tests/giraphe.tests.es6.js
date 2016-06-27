@@ -160,13 +160,14 @@ describe($("giraphe"), function(){
 
 function generatePermutations(){
    const id = Symbol('id')
+       , Node = class {}
    const permutables = [
       // Matched pairs; the first element being keys to add to the constructed `options` argument,
       // and the second being methods / keys to add to the options-constructor as context (i.e. the
       // first sets `$().class`, the second sets `$.new()`.)
       //
       // The first option is the default, when ‘PERMUTATE’ isn't set.
-      [  {  desc: 'class', opts: { class: class Node{} }
+      [  {  desc: 'class', opts: { class: Node }
          ,  helpers: {  has_class: true
                      ,  new: function(){ return new Node }                                      }}
       ,  {  desc: 'pred',  opts: { predicate: new Function }
@@ -175,10 +176,10 @@ function generatePermutations(){
 
     , [  {  desc: 'key',   opts: { key: 'id' }
          ,  helpers: {  has_key: true
-                     ,  key: it =>{ it['id'] = rand(); return it }                              }}
+                     ,  key: it => it['id'] = rand()                                            }}
       ,  {  desc: 'keyer', opts: { key: it => it[id] }
          ,  helpers: {  has_keyer: true,
-                        key: it =>{ it[id] = rand(); return it   }                              }}]
+                        key: it => it[id] = rand()                                              }}]
 
     , [  { desc: null,    opts: {} }
       ,  { desc: 'cache', opts: {cache: true} }                                                 ]
@@ -291,7 +292,7 @@ function permuteTests(body){
          else
              options = new Object
 
-         _.assign(options, p.opts)
+         _.assign(options, p.options)
          return options }
 
       _.assign($, p.helpers)
@@ -301,5 +302,5 @@ function permuteTests(body){
 }
 
 function rand(){
-   return _.random(0, Number.MAX_SAFE_INTEGER)
+   return _.random(0, Number.MAX_SAFE_INTEGER).toString()
 }
