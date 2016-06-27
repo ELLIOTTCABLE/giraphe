@@ -11,9 +11,9 @@ import { readFileSync } from 'fs'
 // XXX: Does this need to be instantiated?
 Mustache.escape = function(s){ return s }
 
-const walkTemplatePath = resolve(__dirname, 'walk.js.mustache')
+const walkTemplatePath = resolve(__dirname, 'walk.js')
 
-let walkTemplate = readFileSync(walkTemplatePath, 'utf8')
+let walkTemplate = readFileSync(walkTemplatePath+'.mustache', 'utf8')
 assert(typeof walkTemplate === 'string' && 0 !== walkTemplate.length)
 process.nextTick(()=> Mustache.parse(walkTemplate))
 
@@ -25,6 +25,9 @@ var Walker = function(options, key) {
    if (null == options)
       options = {}
 
+   if (null == options._description)
+               options._description = new Array
+
    if (null == options.key) {
       if (null == key)
          throw new TypeError("Walker() must be instantiated with "
@@ -32,14 +35,25 @@ var Walker = function(options, key) {
       options.key = key
    }
    if (typeof options.key === 'function') {
-      options.keyer, options.key = options.key, null
+      options.keyer = options.key
+               delete options.key
+
       options['keyer?'] = true
+      options._description.push('keyer')
    }
 
    if (options.class == null && options.predicate == null)
       throw new TypeError("Walker() must be instantiated with "
                         + "either a 'predicate' or 'class' property.")
-   options['predicate?'] = (null != options.predicate)
+   if (null != options.predicate) {
+      options['predicate?'] = true
+      options._description.push('predicate')
+   }
+
+ //if (null != options.cache) {
+ //   options['cache?'] = true
+ //   options._description.push['cache']
+ //}
 
    return constructWalkFunction(options) }
 
@@ -55,9 +69,11 @@ const symbols = {
 const constructWalkFunction = function(options){
    assert(null != options)
    const body = Mustache.render(walkTemplate, options)
+       , desc = options._description.join('+')
+       , path = walkTemplatePath + (desc ? '.'+desc : '')
    assert(typeof body === 'string' && 0 !== body.length)
 
-   const wrap = require_eval(body, walkTemplatePath, {}, true).default
+   const wrap = require_eval(body, path, {}, true).default
    assert(typeof wrap === 'function')
 
    const func = wrap(symbols, options)
