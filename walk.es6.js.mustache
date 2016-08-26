@@ -54,9 +54,10 @@ return function walk(current, parent, cachebacks, runbacks, allbacks, visited = 
          aborted = yes
          return false                                                                              }
 
-      // else, it's a ‘supply-back’!
-
+      // else, it's a ‘supply-back’! These return either,
       // FIXME: D.R.Y. this ffs
+
+      // 1. a single node,
       /* {{#predicate?}} */
       else if ($.predicate.call(returned, returned)) {
          let key;
@@ -74,6 +75,7 @@ return function walk(current, parent, cachebacks, runbacks, allbacks, visited = 
       /* {{/predicate?}} */
 
 
+      // 2. an `Array` of nodes,
       if (_.isArray(returned)) {
          /* {{#predicate?}} */
          assert( _.every(returned, node => $.predicate.call(node, node)) )
@@ -92,6 +94,7 @@ return function walk(current, parent, cachebacks, runbacks, allbacks, visited = 
          _.assign(DISCOVERED, elements)                                                            }
 
 
+      // 3. or a generic Object, behaving as a map of keys-to-nodes.
       else {
          /* {{#predicate?}} */
          assert( _.every(returned, node => $.predicate.call(node, node)) )

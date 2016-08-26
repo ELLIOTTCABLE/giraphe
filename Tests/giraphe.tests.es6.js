@@ -8,9 +8,18 @@ import sinon, { match } from 'sinon'
 import { Walker } from '../giraphe.es6.js'
 
 
+// I produce tests generatively, iterating over the possible forms of invocation. (Some tests
+// are made exclusive to a particular form via a conditional, or by being left out of the
+// iteration.)
 let permutations = generatePermutations()
 
-
+// Each invocation of the `body` passed to `permuteTests`, presuambly full of test-cases, receives
+// an argument `$` that behaves as follows:
+//
+// 1. When called directly `$()`, constructs a new `options` object as permuted across the above
+//    `permutables` (i.e. something like `{ class: <blah>, key: 'id', ... }`),
+// 3. but when called with a `String`, i.e. `$("Hello")`, it suffixes that string with a description
+// 2. and exposes all of the helpers from the above permutations, i.e. `$.new()` or `$.key()`.
 describe("giraphe", function(){
    describe("~ The Walker constructor", function(){
 
@@ -87,22 +96,33 @@ describe("giraphe", function(){
             assert(result[key] === root)
          })
 
+         it("collects nodes returned by a callback (‘a supplyback’)", function(){
+            const A = $.new(), B = $.new(), A_key = $.key(A), B_key = $.key(B)
+            const supplyback = ()=>B
+            var walk = new Walker( $() )
+
+            var result = walk(A, supplyback)
+            assert(result[A_key] === A)
+            assert(result[B_key] === B)
+         })
+
+
          it.skip("returns the collected nodes")
 
          describe("~ callbacks", function(){ const they = it
             they("get called on the passed initial node", function(){
-               const Node = class {}, root = new Node; root.id = '123'
+               const root = $.new(); $.key(root)
                const cb = sinon.spy()
-               var walk = new Walker({ class: Node, key: 'id' })
+               var walk = new Walker( $() )
 
                walk(root, cb)
                assert(cb.calledOnce)
             })
 
             they("are severally called", function(){
-               const Node = class {}, root = new Node; root.id = '123'
+               const root = $.new(); $.key(root)
                const first = sinon.spy(), second = sinon.spy()
-               var walk = new Walker({ class: Node, key: 'id' })
+               var walk = new Walker( $() )
 
                walk(root, first, second)
                assert(first .calledOnce)
@@ -110,36 +130,36 @@ describe("giraphe", function(){
             })
 
             they("are invoked with the current node as `this`", function(){
-               const Node = class {}, root = new Node; root.id = '123'
+               const root = $.new(); $.key(root)
                const cb = sinon.spy()
-               var walk = new Walker({ class: Node, key: 'id' })
+               var walk = new Walker( $() )
 
                walk(root, cb)
                assert(cb.calledOn(root))
             })
 
             they("also receive the current node as the first argument", function(){
-               const Node = class {}, root = new Node; root.id = '123'
+               const root = $.new(); $.key(root)
                const cb = sinon.spy()
-               var walk = new Walker({ class: Node, key: 'id' })
+               var walk = new Walker( $() )
 
                walk(root, cb)
                assert(cb.calledWith(root))
             })
 
             they.skip("receive the parent (discovered-through) node as the second argument", function(){
-               const Node = class {}, root = new Node; root.id = '123'
-               const cb = sinon.spy()
-               var walk = new Walker({ class: Node, key: 'id' })
+               const root = $.new(); $.key(root)
+               const first = ()=>second, second = sinon.spy()
+               var walk = new Walker( $() )
 
                walk(root, cb)
                assert(cb.calledWith(match.any, null))
             })
 
-            they("receive `null` as the second argument when processing the initial node", function(){
-               const Node = class {}, root = new Node; root.id = '123'
+            they("receive `null` as the ‘parent’ (second argument) when processing the initial node", function(){
+               const root = $.new(); $.key(root)
                const cb = sinon.spy()
-               var walk = new Walker({ class: Node, key: 'id' })
+               var walk = new Walker( $() )
 
                walk(root, cb)
                assert(cb.calledWith(match.any, null))
@@ -273,17 +293,6 @@ function generatePermutations(){
       return combine(permutables) }
 }
 
-// I produce tests generatively, iterating over the possible forms of invocation. (Some tests
-// are made exclusive to a particular form via a conditional, or by being left out of the
-// iteration.)
-//
-// Each invocation of the `body`, presuambly full of test-cases, receives an argument `$` that
-// behaves as follows:
-//
-// 1. When called directly `$()`, constructs a new `options` object as permuted across the above
-//    `permutables` (i.e. something like `{ class: <blah>, key: 'id', ... }`),
-// 3. but when called with a `String`, i.e. `$("Hello")`, it suffixes that string with a description
-// 2. and exposes all of the helpers from the above permutations, i.e. `$.new()` or `$.key()`.
 function permuteTests(body){
    debug('Permutating '+permutations.length+' test-permutations')
 
