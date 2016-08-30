@@ -14,6 +14,14 @@
     , "build"                  : "./build.sh"
    }
 
+ , "directories": {
+      "lib"                    : "./"
+    , "src"                    : "./"
+    , "test"                   : "./Tests"
+    , "doc"                    : "./Docs"
+    , "coverage"               : "./Docs/Coverage"
+   }
+
  , "babel": {
       "presets"                : ["es2015", "stage-2"]
     , "plugins"                : ["transform-runtime", "transform-flow-comments"]
@@ -22,13 +30,35 @@
     , "compact"                : false
 
     , "env": {
-         "development": {
+         "coverage": {
+            "plugins": [ "babel-plugin-espower", "istanbul" ]
+         }
+       , "test": {
+            "plugins": [ "babel-plugin-espower" ]
+         }
+       , "development": {
             "plugins": [ "babel-plugin-espower" ]
          }
        , "production": {
             "plugins": [ "babel-plugin-unassert" ]
          }
       }
+   }
+
+ , "nyc": {
+      "all"                    : true
+    , "include"                : ["giraphe.es6.js", "walk.es6.js.mustache"]
+    , "extension"              : [".es6.js", ".es6.js.mustache"]
+
+    , "require"                : ["babel-register"]
+
+    , "sourceMap"              : false
+    , "instrument"             : false
+   }
+
+ , "mocha": {
+      "ui"                     : "bdd"
+    , "reporter"               : "mocha-fivemat-reporter"
    }
 
 
@@ -52,9 +82,11 @@
     , "babel-plugin-transform-flow-comments"           : "^6.8.0"
     , "babel-plugin-espower"                           : "^2.2.0"
     , "babel-plugin-unassert"                          : "^2.1.0"
+    , "babel-plugin-istanbul"                          : "^2.0.0"
 
     , "mocha"                  : "^2.5.3"
     , "power-assert"           : "^1.4.1"
     , "sinon"                  : "^1.17.4"
+    , "nyc"                    : "^8.1.0"
    }
 }
