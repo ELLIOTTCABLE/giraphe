@@ -76,7 +76,7 @@ return function walk(current, parent, cachebacks, runbacks, allbacks, visited = 
 
 
       // 2. an `Array` of nodes,
-      if (_.isArray(returned)) {
+      else if (_.isArray(returned)) {
          /* {{#predicate?}} */
          assert( _.every(returned, node => $.predicate.call(node, node)) )
          /* {{/predicate?}} {{^predicate?}} */

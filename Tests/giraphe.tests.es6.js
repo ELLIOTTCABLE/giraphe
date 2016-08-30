@@ -197,9 +197,9 @@ function generatePermutations(){
       [  {  desc: 'class', opts: { class: Node }
          ,  helpers: {  has_class: true
                      ,  new: function(){ return new Node }                                      }}
-      ,  {  desc: 'pred',  opts: { predicate: new Function }
+      ,  {  desc: 'pred',  opts: { predicate: (it)=> it.isNode  }
          ,  helpers: {  has_predicate: true
-                     ,  new: function(){ return new Object }                                    }}]
+                     ,  new: function(){ return { isNode: true } }                              }}]
 
     , [  {  desc: 'key',   opts: { key: 'id' }
          ,  helpers: {  has_key: true
