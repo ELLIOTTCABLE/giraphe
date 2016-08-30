@@ -106,22 +106,22 @@ return function walk(current, parent, cachebacks, runbacks, allbacks, visited = 
 
       return true                                                                                 })
 
-      if (aborted)  return false // If walk() returns `false`, it immediately propagates upwards,
-      if (rejected) return {}    // but if it was rejected, then merely add nothing on this step
-                                 // ... else, the current node passed all filters, so we can add any
-                                 // discovered nodes (and itself!) to the return value for this step
-      let can_cache = true
+   if (aborted)  return false // If walk() returns `false`, it immediately propagates upwards,
+   if (rejected) return {}    // but if it was rejected, then merely add nothing on this step
+                              // ... else, the current node passed all filters, so we can add any
+                              // discovered nodes (and itself!) to the return value for this step
+   let can_cache = true
 
-      for (key in DISCOVERED) {
-         const node = DISCOVERED[key]
-             , result = walk(node, current, cachebacks, runbacks, allbacks, visited)
+   for (key in DISCOVERED) {
+      const node = DISCOVERED[key]
+            , result = walk(node, current, cachebacks, runbacks, allbacks, visited)
 
-         if (false === result) return false   // The only non-Object result is an `abortIteration`
+      if (false === result) return false   // The only non-Object result is an `abortIteration`
 
-         // NYI
-         if (null == result) can_cache = null // invalidate the cache if *any* child was skipped
+      // NYI
+      if (null == result) can_cache = null // invalidate the cache if *any* child was skipped
 
-         _.assign(DISCOVERED, result)                                                              }
+      _.assign(DISCOVERED, result)                                                              }
 
-      DISCOVERED[key] = current
-      return DISCOVERED                                                                          } }
+   DISCOVERED[key] = current
+   return DISCOVERED                                                                          } }
