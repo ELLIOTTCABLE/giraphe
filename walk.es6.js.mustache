@@ -30,13 +30,13 @@ return function walk(current, parent, cachebacks, runbacks, allbacks, visited = 
                                                                            assert( null != current )
                                                                      assert( 0 !== allbacks.length )
 
-   let key;
-   /* {{#keyer?}} */ key = $.keyer.call(current, current) /* {{/keyer?}} */
-   /* {{^keyer?}} */ key = current[$.key]                 /* {{/keyer?}} */
-                                                     assert( typeof key === 'string' && key !== '' )
+   let KEY;
+   /* {{#keyer?}} */ KEY = $.keyer.call(current, current) /* {{/keyer?}} */
+   /* {{^keyer?}} */ KEY = current[$.key]                 /* {{/keyer?}} */
+                                                     assert( typeof KEY === 'string' && KEY !== '' )
 
-   if (visited[key]) return null
-       visited[key] = current
+   if (visited[KEY]) return null
+       visited[KEY] = current
 
    const DISCOVERED = new Object
    let   aborted = false
@@ -123,5 +123,5 @@ return function walk(current, parent, cachebacks, runbacks, allbacks, visited = 
 
       _.assign(DISCOVERED, result)                                                              }
 
-   DISCOVERED[key] = current
+   DISCOVERED[KEY] = current
    return DISCOVERED                                                                          } }
