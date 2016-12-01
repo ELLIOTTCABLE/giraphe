@@ -4,6 +4,7 @@ const  debug = Debug('giraphe:tests')
 
 import assert from 'power-assert'
 import sinon, { match } from 'sinon'
+const __ = match.any
 
 import { Walker } from '../giraphe.es6.js'
 
@@ -65,7 +66,7 @@ describe("giraphe", function(){
 
       describe($("~ a walk function"), function(){
 
-         it($("instantiates"), function(){
+         it("instantiates", function(){
             var walk = new Walker( $() )
             assert(typeof walk === 'function')
          })
@@ -147,34 +148,23 @@ describe("giraphe", function(){
                assert(cb.calledWith(root))
             })
 
-            they.skip("receive the parent (discovered-through) node as the second argument", function(){
-               const root = $.new(); $.key(root)
-               const first = ()=>second, second = sinon.spy()
-               var walk = new Walker( $() )
-
-               walk(root, cb)
-               assert(cb.calledWith(match.any, null))
-            })
-
-            they("receive `null` as the ‘parent’ (second argument) when processing the initial node", function(){
+            they("receive `null` instead of a ‘parent’ when processing the root node", function(){
                const root = $.new(); $.key(root)
                const cb = sinon.spy()
                var walk = new Walker( $() )
 
                walk(root, cb)
-               assert(cb.calledWith(match.any, null))
-             //assert(cb.calledWith(match(), null, match({}), match({}), match([cb])))
+               assert(cb.calledWith(__, null))
             })
 
-            // FIXME: More robust test.
-            they.skip("receive the peer-nodes discovered thus far", function(){
-               const Node = class {}, root = new Node; root.id = '123'
-               const cb = sinon.spy()
-               var walk = new Walker({ class: Node, key: 'id' })
+            they("receive the parent (discovered-through) node as the second argument", function(){
+               const parent = $.new(); $.key(parent)
+               const child  = $.new(); $.key(child)
+               const supplier = ()=>child, spy = sinon.spy()
+               var walk = new Walker( $() )
 
-               walk(root, cb)
-               assert(cb.calledWith(match.any, null))
-             //assert(cb.calledWith(match(), null, match({}), match({}), match([cb])))
+               walk(parent, supplier, spy)
+               assert(spy.calledWith(__, parent))
             })
          })
 
