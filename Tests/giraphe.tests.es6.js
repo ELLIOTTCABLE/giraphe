@@ -166,6 +166,23 @@ describe("giraphe", function(){
                walk(parent, supplier, spy)
                assert(spy.calledWith(__, parent))
             })
+
+            // FIXME: Clean this mess up (chanted to the tune of ‘Smack My Bitch Up’ — Prodigy)
+            they("receive the peer-nodes discovered by prior callbacks", function(){
+               const root = $.new(),         A = $.new(),      B = $.new()
+                   , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B)
+
+               const first = ()=>A, second = ()=>B
+                   , spy = sinon.spy(function(_, __, supplied){
+                              assert(supplied[A_key] === A)
+                              assert(supplied[B_key] === undefined)
+                           })
+
+               var walk = new Walker( $() )
+               walk(root, first, spy, second)
+
+               assert(spy.called)
+            })
          })
 
       }) // ~ a walk function
