@@ -168,7 +168,7 @@ describe("giraphe", function(){
             })
 
             // FIXME: Clean this mess up (chanted to the tune of ‘Smack My Bitch Up’ — Prodigy)
-            they("receive the peer-nodes discovered by prior callbacks", function(){
+            they("receive the peer-nodes discovered by prior callbacks on the same node", function(){
                const root = $.new(),         A = $.new(),      B = $.new()
                    , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B)
 
@@ -182,6 +182,34 @@ describe("giraphe", function(){
                walk(root, first, spy, second)
 
                assert(spy.called)
+            })
+
+            they("do *not* include nodes supplied by previous walk-steps", function(){
+               const root = $.new(), root_key = $.key(root)
+                   , foo  = $.new(), foo_key  = $.key(foo)
+
+                   , bar = $.new(),        baz = $.new()
+                   , bar_key = $.key(bar), baz_key = $.key(baz)
+
+               const supplier = sinon.stub()
+                     supplier.withArgs(root).returns(foo)
+                     supplier.withArgs(foo).returns([bar, baz])
+
+               const spy = sinon.spy(function(node, _, supplied){
+                     if (node === foo) {
+                        assert(supplied[bar_key] === bar)
+                        assert(supplied[baz_key] === baz)
+                        assert(supplied[root_key] === undefined)
+                     }
+                  })
+
+               var walk = new Walker( $() )
+               walk(root, supplier, spy)
+
+               assert(spy.calledWith(root))
+               assert(spy.calledWith(foo))
+               assert(spy.calledWith(bar))
+               assert(spy.calledWith(baz))
             })
          })
 
