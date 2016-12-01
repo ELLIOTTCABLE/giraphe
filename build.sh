@@ -23,7 +23,5 @@ fi
 
 go () { [ -n "$print_commands" ] && puts '`` '"$*" >&2 ; "$@" || exit $? ;}
 
-go babel './giraphe.es6.js' > './giraphe.js'
 
-go babel --comments 'true' --retainLines 'true' \
-   './walk.es6.js.mustache' > './walk.js.mustache'
+go babel './giraphe.es6.js' > './giraphe.js'
