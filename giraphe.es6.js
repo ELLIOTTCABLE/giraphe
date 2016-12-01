@@ -5,6 +5,8 @@ import assert from 'power-assert'
 import _ from 'lodash'
 
 
+// TODO: Accept existing `walk()` function to copy options
+// TODO: Accept a set of callbacks to prepend to all walks (to avoid `bind()` stomping on `this`)
 const Walker = function Walker(options, key) {
 
    if (_.isFunction(options))
