@@ -14,16 +14,13 @@ const Walker = function Walker(options, key) {
    if (null == options)
       options = {}
 
-   if (null == options.key) {
+   if (null == options.key && null == options.keyer) {
       if (null == key)
          throw new TypeError("Walker() must be instantiated with "
-                           + "a string-ish (or invokable) 'key' property.")
+                           + "a string-ish 'key' property, or an invokable 'keyer' property.")
       options.key = key
    }
-   if (typeof options.key === 'function') {
-      options.keyer = options.key
-               delete options.key
-
+   if (null != options.keyer) {
       options.has_keyer = true
    }
 

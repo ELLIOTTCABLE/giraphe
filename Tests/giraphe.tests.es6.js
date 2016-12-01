@@ -43,9 +43,9 @@ describe("giraphe", function(){
          assert.doesNotThrow(function(){ new Walker({ predicate: new Function, key: 'id' }) })
       })
 
-      it("accepts a key-function", function(){
+      it("accepts a keyer-function", function(){
          class Node {}
-         assert.doesNotThrow(function(){ new Walker({ class: Node, key: function(){} }) })
+         assert.doesNotThrow(function(){ new Walker({ class: Node, keyer: function(){} }) })
       })
 
       it("does not currently support unkeyed iteration", function(){
@@ -264,7 +264,7 @@ function generatePermutations(){
     , [  {  desc: 'key',   opts: { key: 'id' }
          ,  helpers: {  has_key: true
                      ,  key: it => it['id'] = rand()                                            }}
-      ,  {  desc: 'keyer', opts: { key: it => it[id] }
+      ,  {  desc: 'keyer', opts: { keyer: it => it[id] }
          ,  helpers: {  has_keyer: true,
                         key: it => it[id] = rand()                                              }}]
 
