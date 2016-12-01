@@ -14,10 +14,6 @@ const Walker = function Walker(options, key) {
    if (null == options)
       options = {}
 
-   // This is used in the dynamic test-generation. This should probably be made compile-out. >,>
-   if (null == options._description)
-               options._description = new Array
-
    if (null == options.key) {
       if (null == key)
          throw new TypeError("Walker() must be instantiated with "
@@ -29,20 +25,17 @@ const Walker = function Walker(options, key) {
                delete options.key
 
       options.has_keyer = true
-      options._description.push('keyer')
    }
 
-   if (options.class == null && options.predicate == null)
+   if (null == options.class && null == options.predicate)
       throw new TypeError("Walker() must be instantiated with "
                         + "either a 'predicate' or 'class' property.")
    if (null != options.predicate) {
       options.has_predicate = true
-      options._description.push('predicate')
    }
 
  //if (null != options.cache) {
  //   options.has_cache = true
- //   options._description.push['cache']
  //}
 
    return constructWalkFunction(options) }

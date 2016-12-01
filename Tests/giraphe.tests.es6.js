@@ -211,6 +211,31 @@ describe("giraphe", function(){
                assert(spy.calledWith(bar))
                assert(spy.calledWith(baz))
             })
+
+            they("receive a set of all nodes seen thus far", function(){
+               const root = $.new(), root_key = $.key(root)
+                   , foo  = $.new()       , bar = $.new(),        baz = $.new()
+                   , foo_key  = $.key(foo), bar_key = $.key(bar), baz_key = $.key(baz)
+
+               const supplier = sinon.stub()
+                     supplier.withArgs(root).returns(foo)
+                     supplier.withArgs(foo).returns(bar)
+                     supplier.withArgs(bar).returns(baz)
+
+               const spy = sinon.spy(function(node, _, __, seen){
+                     if (node === bar) {
+                        assert(seen[root_key] === root)
+                        assert(seen[foo_key] === foo)
+                        assert(seen[bar_key] === bar)
+                        assert(seen[baz_key] === undefined)
+                     }
+                  })
+
+               var walk = new Walker( $() )
+               walk(root, supplier, spy)
+
+               assert(spy.calledWith(bar))
+            })
          })
 
       }) // ~ a walk function
