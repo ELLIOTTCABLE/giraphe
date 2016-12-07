@@ -33,15 +33,14 @@ fi
 [ -z "${SILENT##[NFnf]*}${QUIET##[NFnf]*}" ] && [ "${VERBOSE:-4}" -gt 6 ] && print_commands=yes
 
 if [ -n "${DEBUGGER##[NFnf]*}" ]; then
-   [ ! -x "./node_modules/.bin/node-debug" ] && \
-      pute 'You must `npm install node-inspector` to use the $DEBUGGER flag!' && exit 127
+   # FIXME: This should require node-debug when the *current version* of Node is old enough
+   #[ ! -x "./node_modules/.bin/node-debug" ] && \
+   #   pute 'You must `npm install node-inspector` to use the $DEBUGGER flag!' && exit 127
 
    WATCH='no'
    COVERAGE='no'
 
-   [ -z "${DEBUG_MODULES##[NFnf]*}" ] && \
-      hidden='--hidden node_modules/'
-   invocation_guard="./node_modules/.bin/node-debug $hidden --cli --config './Scripts/node-inspectorrc.json'"
+   invocation_guard="node --inspect --debug-brk"
 fi
 
 if [ -n "${WATCH##[NFnf]*}" ]; then
@@ -64,7 +63,6 @@ fi
    "Watching filesystem:   ${WATCH:--}"                                       \
    "Running debugger:      ${DEBUGGER:--}"                                    \
    "Generating coverage:   ${COVERAGE:--}"                                    \
-   "Debugging modules:     ${DEBUG_MODULES:--}"                               \
    "" \
    "Verbosity:             '$VERBOSE'"                                        \
    "Printing commands:     ${print_commands:--}"                              \

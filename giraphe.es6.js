@@ -96,7 +96,7 @@ const walk = function walk($, current, parent, cachebacks, runbacks, allbacks
 
       if (is_node) {
          let key = $.has_keyer
-                 ?  $.keyer.call(returned, returned)
+                 ? $.keyer.call(returned, returned)
                  : returned[$.key]
                                                                                                          assert( typeof key === 'string' && key !== '' )
                                                                      DISCOVERED[key] = returned }
