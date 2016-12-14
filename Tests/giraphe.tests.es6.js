@@ -129,8 +129,7 @@ describe("giraphe", function(){
                 , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B)
 
             const supplier = node => [A, B]
-                , filter = node => {
-                     if (node === A) return false }
+                , filter = node => { if (node === A) return false }
 
             var walk = new Walker( $() )
             var rv = walk(root, supplier, filter)
@@ -150,6 +149,19 @@ describe("giraphe", function(){
             var rv = walk(root, filter)
 
             assert(Object.keys(rv).length === 0)
+         })
+
+         it("can be short-circuited by returning the abortIteration sentinel", function(){
+            const root = $.new(),         A = $.new(),      B = $.new()
+                , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B)
+
+            const supplier = node => [A, B]
+                , aborter = node => { if (node === A) return Walker.abortIteration }
+
+            var walk = new Walker( $() )
+            var rv = walk(root, supplier, aborter)
+
+            assert(rv === false)
          })
 
 
@@ -280,9 +292,7 @@ describe("giraphe", function(){
                assert(spy.calledWith(bar))
             })
 
-            // FIXME: This is pending a fix to sinon#1002:
-            //        <https://github.com/sinonjs/sinon/issues/1002#issuecomment-266903866>
-            they.skip("see rejected nodes in the `seen` argument", function(){
+            they("see rejected nodes in the `seen` argument", function(){
                const root = $.new(), root_key = $.key(root)
                    , foo  = $.new()       , bar = $.new()
                    , foo_key  = $.key(foo), bar_key = $.key(bar)
@@ -405,6 +415,43 @@ describe("giraphe", function(){
                assert(rv[B_key] === B)
                assert(rv[C_key] === C)
             })
+
+            they("are not invoked on a walk-step if a prior filter `rejects` the current node",
+            function(){
+               const root = $.new(), root_key = $.key(root)
+                   , foo  = $.new()       , bar = $.new()
+                   , foo_key  = $.key(foo), bar_key = $.key(bar)
+
+               const supplier = node => [foo, bar]
+                   , filter = node => { if (node === foo) return false }
+
+               const spy = sinon.spy()
+
+               var walk = new Walker( $() )
+               walk(root, supplier, filter, spy)
+
+               assert(spy.calledWith(bar))
+               assert(spy.neverCalledWith(foo))
+            })
+
+            they("are not invoked at all after a walk is aborted", function(){
+               const root = $.new(), root_key = $.key(root)
+                   , foo  = $.new()       , bar = $.new()
+                   , foo_key  = $.key(foo), bar_key = $.key(bar)
+
+               const supplier = node => [foo, bar]
+                   , aborter = node => { if (node === foo) return Walker.abortIteration }
+
+               const spy = sinon.spy()
+
+               var walk = new Walker( $() )
+               walk(root, supplier, aborter, spy)
+
+               assert(spy.calledWith(root))
+               assert(spy.neverCalledWith(foo))
+               assert(spy.neverCalledWith(bar))
+            })
+
          }) // ~ callbacks
 
       }) // ~ a walk function
@@ -415,7 +462,10 @@ describe("giraphe", function(){
 
 
 function generatePermutations(){
-   const id = Symbol('id')
+   // FIXME: This is pending a fix to sinon#1002:
+   //        <https://github.com/sinonjs/sinon/issues/1002#issuecomment-266903866>
+   //const id = Symbol('id')
+   const id = '--this-is-an-id-i-guess-idk'
        , Node = class {}
    const permutables = [
       // Matched pairs; the first element being keys to add to the constructed `options` argument,

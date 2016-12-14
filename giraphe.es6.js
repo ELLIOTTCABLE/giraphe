@@ -45,7 +45,6 @@ const symbols = {
  , cachebackKey:   Walker.cachebackKey    = '::walk__cachingKey'
 }
 
-
 const constructWalkFunction = function(options){
    assert(null != options)
 
@@ -87,7 +86,7 @@ const walk = function walk($, current, parent, cachebacks, runbacks, allbacks
 
       // and ‘abort-backs’ are a special case,
       if (symbols.abortIteration === returned) {
-         aborted = yes;                                                            return false }
+         aborted = true;                                                           return false }
 
       // else, it's a ‘supply-back’! These return either,
       const is_node = $.has_predicate
