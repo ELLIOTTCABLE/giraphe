@@ -236,6 +236,39 @@ describe("giraphe", function(){
 
                assert(spy.calledWith(bar))
             })
+
+            // FIXME: This is pending a fix to sinon#1002:
+            //        <https://github.com/sinonjs/sinon/issues/1002#issuecomment-266903866>
+            they.skip("see rejected nodes in the `seen` argument", function(){
+               const root = $.new(), root_key = $.key(root)
+                   , foo  = $.new()       , bar = $.new()
+                   , foo_key  = $.key(foo), bar_key = $.key(bar)
+
+               const supplier = sinon.stub()
+                     supplier.withArgs(root).returns([foo, bar])
+
+               const filter = sinon.stub()
+                     filter.returns(true)
+                     filter.withArgs(foo).returns(false)
+
+               const spy = sinon.spy(function(node, _, __, seen){
+                     if (node === bar) {
+                        assert(seen[root_key] === root)
+                        assert(seen[foo_key] === foo)
+                        assert(seen[bar_key] === bar)
+                     }
+                  })
+
+               var walk = new Walker( $() )
+               walk(root, supplier, filter, spy)
+
+               assert(spy.neverCalledWith(foo))
+               assert(spy.calledWith(bar))
+            })
+
+            they("receive callbacks passed to the walk() call as the final arugment", function(){
+
+            })
          })
 
       }) // ~ a walk function

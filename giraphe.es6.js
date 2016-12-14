@@ -128,6 +128,7 @@ const walk = function walk($, current, parent, cachebacks, runbacks, allbacks
 
    let can_cache = true
 
+   const ACCEPTED = new Object
    for (let key of Object.keys(DISCOVERED)) {
       const node = DISCOVERED[key]
           , result = walk($, node, current, cachebacks, runbacks, allbacks, visited)
@@ -137,9 +138,9 @@ const walk = function walk($, current, parent, cachebacks, runbacks, allbacks
       // NYI
       if (null == result) // invalidate the cache if *any* child was skipped
          can_cache = null
-                                                                     _.assign(DISCOVERED, result) }
+                                                                       _.assign(ACCEPTED, result) }
 
-   DISCOVERED[KEY] = current;                                                    return DISCOVERED }
+   ACCEPTED[KEY] = current;                                                        return ACCEPTED }
 
 
 export { Walker }
