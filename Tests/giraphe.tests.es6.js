@@ -107,6 +107,51 @@ describe("giraphe", function(){
             assert(result[B_key] === B)
          })
 
+         it("returns the collected nodes", function(){
+            const root = $.new(),         A = $.new(),      B = $.new()
+                , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B)
+
+            const first = ()=> A
+                , second = ()=> B
+
+            var walk = new Walker( $() )
+            var rv = walk(root, first, second)
+
+            assert.ok(rv)
+            assert(Object.keys(rv).length === 3)
+            assert(rv[root_key] === root)
+            assert(rv[A_key] === A)
+            assert(rv[B_key] === B)
+         })
+
+         it("does not return rejected nodes", function(){
+            const root = $.new(),         A = $.new(),      B = $.new()
+                , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B)
+
+            const supplier = node => [A, B]
+                , filter = node => {
+                     if (node === A) return false }
+
+            var walk = new Walker( $() )
+            var rv = walk(root, supplier, filter)
+
+            assert(rv[root_key] === root)
+            assert(rv[B_key] === B)
+
+            assert(!(A_key in rv))
+         })
+
+         it("is capable of returning an empty set if all nodes are rejected", function(){
+            const root = $.new(), root_key = $.key(root)
+
+            const filter = ()=>{ return false }
+
+            var walk = new Walker( $() )
+            var rv = walk(root, filter)
+
+            assert(Object.keys(rv).length === 0)
+         })
+
 
          describe("~ callbacks", function(){ const they = it
             they("get called on the passed initial node", function(){
@@ -283,43 +328,84 @@ describe("giraphe", function(){
 
                assert(spy.called)
             })
+
+            they("may pass the current node by returning `true`", function(){
+               const root = $.new(), root_key = $.key(root)
+
+               const filter = ()=>{ return true }
+
+               var walk = new Walker( $() )
+               var rv = walk(root, filter)
+
+               assert(rv[root_key] === root)
+            })
+
+            they("may pass the current node by returning nothing", function(){
+               const root = $.new(), root_key = $.key(root)
+
+               const filter = ()=>{}
+
+               var walk = new Walker( $() )
+               var rv = walk(root, filter)
+
+               assert(rv[root_key] === root)
+            })
+
+            they("may reject the current node by explicitly returning `false`", function(){
+               const root = $.new(), root_key = $.key(root)
+
+               const filter = ()=>{ return false }
+
+               var walk = new Walker( $() )
+               var rv = walk(root, filter)
+
+               assert(!(root_key in rv))
+            })
+
+            they("may collect an individual node by returning it directly", function(){
+               const root = $.new(), root_key = $.key(root)
+                   , other = $.new(), other_key = $.key(other)
+
+               const supplier = ()=>{ return other }
+
+               var walk = new Walker( $() )
+               var rv = walk(root, supplier)
+
+               assert(rv[other_key] === other)
+            })
+
+            they("may collect nodes by returning them in an Array", function(){
+               const root = $.new(),         A = $.new(),      B = $.new(),      C = $.new()
+                   , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B), C_key = $.key(C)
+
+               const supplier = ()=>{ return [A, B, C] }
+
+               var walk = new Walker( $() )
+               var rv = walk(root, supplier)
+
+               assert(rv[A_key] === A)
+               assert(rv[B_key] === B)
+               assert(rv[C_key] === C)
+            })
+
+            they("may collect nodes by returning them in an object-mapping", function(){
+               const root = $.new(),         A = $.new(),      B = $.new(),      C = $.new()
+                   , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B), C_key = $.key(C)
+
+               const supplier = ()=>{ return {
+                  [A_key]: A
+                , [B_key]: B
+                , [C_key]: C
+               } }
+
+               var walk = new Walker( $() )
+               var rv = walk(root, supplier)
+
+               assert(rv[A_key] === A)
+               assert(rv[B_key] === B)
+               assert(rv[C_key] === C)
+            })
          }) // ~ callbacks
-
-         it("returns the collected nodes", function(){
-            const root = $.new(),         A = $.new(),      B = $.new()
-                , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B)
-
-            const supplier = sinon.stub()
-                  supplier.onCall(0).returns(A)
-                  supplier.onCall(1).returns(B)
-
-            var walk = new Walker( $() )
-            var rv = walk(root, supplier)
-
-            assert(supplier.called)
-
-            assert.ok(rv)
-            assert(rv[root_key] === root)
-            assert(rv[A_key] === A)
-            assert(rv[B_key] === B)
-         })
-
-         it("does not return rejected nodes", function(){
-            const root = $.new(),         A = $.new(),      B = $.new()
-                , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B)
-
-            const supplier = node => [A, B]
-                , filter = node => {
-                     if (node === A) return false }
-
-            var walk = new Walker( $() )
-            var rv = walk(root, supplier, filter)
-
-            assert(rv[root_key] === root)
-            assert(rv[B_key] === B)
-
-            assert(!(A_key in rv))
-         })
 
       }) // ~ a walk function
    }) // permuteTests
