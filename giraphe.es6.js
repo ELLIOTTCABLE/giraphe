@@ -136,8 +136,8 @@ const walk = function walk($, current, parent, cachebacks, runbacks, allbacks
       if (false === result) /* The only non-Object result is an `abortIteration` */    return false
 
       // NYI
-      if (null == result) // invalidate the cache if *any* child was skipped
-         can_cache = null
+      //if (null == result) // invalidate the cache if *any* child was skipped
+      //   can_cache = null
                                                                        _.assign(ACCEPTED, result) }
 
    ACCEPTED[KEY] = current;                                                        return ACCEPTED }

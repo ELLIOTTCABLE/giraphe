@@ -267,7 +267,23 @@ describe("giraphe", function(){
             })
 
             they("receive callbacks passed to the walk() call as the final arugment", function(){
+               const root = $.new(); $.key(root)
 
+               const first = new Function()
+                   , second = new Function()
+                   , third = new Function()
+
+               const spy = sinon.spy(function(node, _, __, ___, allbacks){
+                  assert(allbacks.indexOf(spy) === 0)
+                  assert(allbacks.indexOf(first) === 1)
+                  assert(allbacks.indexOf(second) === 2)
+                  assert(allbacks.indexOf(third) === 3)
+               })
+
+               var walk = new Walker( $() )
+               walk(root, spy, first, second, third)
+
+               assert(spy.called)
             })
          })
 
