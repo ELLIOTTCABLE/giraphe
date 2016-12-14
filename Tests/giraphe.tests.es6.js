@@ -108,8 +108,6 @@ describe("giraphe", function(){
          })
 
 
-         it.skip("returns the collected nodes")
-
          describe("~ callbacks", function(){ const they = it
             they("get called on the passed initial node", function(){
                const root = $.new(); $.key(root)
@@ -285,6 +283,42 @@ describe("giraphe", function(){
 
                assert(spy.called)
             })
+         }) // ~ callbacks
+
+         it("returns the collected nodes", function(){
+            const root = $.new(),         A = $.new(),      B = $.new()
+                , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B)
+
+            const supplier = sinon.stub()
+                  supplier.onCall(0).returns(A)
+                  supplier.onCall(1).returns(B)
+
+            var walk = new Walker( $() )
+            var rv = walk(root, supplier)
+
+            assert(supplier.called)
+
+            assert.ok(rv)
+            assert(rv[root_key] === root)
+            assert(rv[A_key] === A)
+            assert(rv[B_key] === B)
+         })
+
+         it("does not return rejected nodes", function(){
+            const root = $.new(),         A = $.new(),      B = $.new()
+                , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B)
+
+            const supplier = node => [A, B]
+                , filter = node => {
+                     if (node === A) return false }
+
+            var walk = new Walker( $() )
+            var rv = walk(root, supplier, filter)
+
+            assert(rv[root_key] === root)
+            assert(rv[B_key] === B)
+
+            assert(!(A_key in rv))
          })
 
       }) // ~ a walk function
