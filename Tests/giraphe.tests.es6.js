@@ -299,9 +299,9 @@ describe("giraphe", function(){
 
                const spy = sinon.spy(function(node, _, __, seen){
                      if (node === bar) {
-                        assert(seen[root_key] === root)
-                        assert(seen[foo_key] === foo)
-                        assert(seen[bar_key] === bar)
+                        assert(seen[root_key] && seen[root_key].node === root)
+                        assert(seen[foo_key]  && seen[foo_key] .node === foo)
+                        assert(seen[bar_key]  && seen[bar_key] .node === bar)
                         assert(seen[baz_key] === undefined)
                      }
                   })
@@ -326,9 +326,9 @@ describe("giraphe", function(){
 
                const spy = sinon.spy(function(node, _, __, seen){
                      if (node === bar) {
-                        assert(seen[root_key] === root)
-                        assert(seen[foo_key] === foo)
-                        assert(seen[bar_key] === bar)
+                        assert(seen[root_key] && seen[root_key].node === root)
+                        assert(seen[foo_key]  && seen[foo_key] .node === foo)
+                        assert(seen[bar_key]  && seen[bar_key] .node === bar)
                      }
                   })
 

@@ -49,6 +49,7 @@ const constructWalkFunction = function(options){
    assert(null != options)
 
    return function invokeWalk(root, ...callbacks){
+      const SEEN = new Object
 
       // If method-invoked, `root.walk(...)`
       if (typeof this !== 'undefined' && this !== (null,eval)('this')) {
@@ -57,36 +58,49 @@ const constructWalkFunction = function(options){
       }
 
       debug(`invoking walk([${ callbacks.length }]):`, root)
-      return walk(options, root, null, [], callbacks, callbacks)
-   }
+      const result = walk(options, [root], [], callbacks, callbacks, SEEN)
+
+      if (false === result) /* an `abortIteration` */ return false
+
+      for (let key of Object.keys(SEEN)) {
+         if (!SEEN[key].accepted) delete SEEN[key]
+         else SEEN[key] = SEEN[key].node
+      }
+
+      return SEEN }
 }
 
-const walk = function walk($, current, parent, cachebacks, runbacks, allbacks
-                         , visited = new Object){
-                                                                                                         debug( 'walk():', current )
-                                                                                                         assert( null != current )
+const walk = function walk($, path, cachebacks, runbacks, allbacks, SEEN){                               assert( null != path )
+                                                                                                         assert( null != path[0] )
                                                                                                          assert( 0 !== allbacks.length )
-   const KEY = $.has_keyer
+   const current = path[0]
+       , parent = path[1] || null
+       , KEY = $.has_keyer
              ? $.keyer.call(current, current)
              : current[$.key]
                                                                                                          assert( typeof KEY === 'string' && KEY !== '' )
-   if (visited[KEY]) return null
-       visited[KEY] = current
+   if  (SEEN[KEY] && SEEN[KEY].accepted) return null
+   else SEEN[KEY] = { node: current, accepted: false }
+
+   if (debug.enabled) {
+      const path_bits = path.map(bit => $.has_keyer ? $.keyer.call(bit, bit) : bit[$.key])
+      debug( 'walk(): ', path_bits.join('→') )                                                   }
+
 
    const DISCOVERED = new Object
    let   aborted = false
      ,   rejected = false
 
    rejected = ! _.every(runbacks, callback => {
-      const returned = callback.call(current, current, parent, DISCOVERED, visited, allbacks)
+      const returned = callback.call(current, current, parent, DISCOVERED, SEEN, allbacks)
 
       // If it returns a boolean, or nothing at all, then it's a ‘filter-back’,
-      if (false === returned)                                                      return false
-      if (null == returned || true === returned)                                   return true
+      if (false === returned)                                                       return false
+      if (null == returned || true === returned)                                    return true
 
       // and ‘abort-backs’ are a special case,
       if (symbols.abortIteration === returned) {
-         aborted = true;                                                           return false }
+         aborted = true;                                                            return false }
 
       // else, it's a ‘supply-back’! These return either,
       const is_node = $.has_predicate
@@ -120,26 +134,22 @@ const walk = function walk($, current, parent, cachebacks, runbacks, allbacks
 
       return true                                                                                })
 
-   if (aborted)  /* If walk() returns `false`, it immediately propagates upwards, */   return false
-   if (rejected) /* but if it was rejected, then merely add nothing on this step */    return {}
-                 // ... else, the current node passed all filters, so we can add any
-                 // discovered nodes (and itself!) to the return value for this step
+   if (aborted)  /* If walk() returns `false`, it immediately propagates upwards, */return false
+   if (rejected) /* but if it was rejected, then merely add nothing on this step */ return {}
 
-   let can_cache = true
+                 // ... else, the current node passed all filters, so we can mark this node as
+                 // accepted, and recurse into discovered nodes
+   SEEN[KEY].accepted = true
 
-   const ACCEPTED = new Object
+   // XXX: depth-first traversal? Should this be configurable?
    for (let key of Object.keys(DISCOVERED)) {
       const node = DISCOVERED[key]
-          , result = walk($, node, current, cachebacks, runbacks, allbacks, visited)
+          , sub_path = path.slice()
+            sub_path.unshift(node)
 
-      if (false === result) /* The only non-Object result is an `abortIteration` */    return false
+      const result = walk($, sub_path, cachebacks, runbacks, allbacks, SEEN)
 
-      // NYI
-      //if (null == result) // invalidate the cache if *any* child was skipped
-      //   can_cache = null
-                                                                       _.assign(ACCEPTED, result) }
-
-   ACCEPTED[KEY] = current;                                                        return ACCEPTED }
+      if (false === result) /* The only non-Object result is an `abortIteration` */ return false }}
 
 
 export { Walker }
