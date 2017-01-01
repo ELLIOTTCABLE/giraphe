@@ -164,6 +164,26 @@ describe("giraphe", function(){
             assert(rv === false)
          })
 
+         it("will re-discover a previously-rejected node via a different path",
+         function(){
+            const root = $.new(), root_key = $.key(root)
+                , foo  = $.new()       , bar = $.new()
+                , foo_key  = $.key(foo), bar_key = $.key(bar)
+
+            const first = node => { if (node === root) return [foo, bar] }
+                , second = node => { if (node === bar) return foo }
+                , filter = (node, parent) => {
+                     if (parent === root && node === foo) return false }
+
+            const spy = sinon.spy()
+
+            var walk = new Walker( $() )
+            var rv = walk(root, first, second, filter, spy)
+
+            assert(spy.neverCalledWith(foo, root))
+            assert(spy.calledWith(foo, bar))
+         })
+
 
          describe("~ callbacks", function(){ const they = it
             they("get called on the passed initial node", function(){
