@@ -1,0 +1,8 @@
+*.es6.js*
+
+build.sh
+test.sh
+
+Docs/Coverage/*
+
+**/tags

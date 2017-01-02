@@ -13,7 +13,7 @@ pute() { printf %s\\n "~~ $*" >&2 ;}
 
 # FIXME: This should support *excluded* modules with a minus, as per `node-debug`:
 #        https://github.com/visionmedia/debug
-if echo "$DEBUG" | grep -qE '(^|,\s*)(\*|mocha-before-this)($|,)'; then
+if echo "$DEBUG" | grep -qE '(^|,\s*)(\*|giraphe(:(scripts|\*))?)($|,)'; then
    pute "Script debugging enabled (in: `basename $0`)."
    DEBUG_SCRIPTS=yes
    VERBOSE="${VERBOSE:-7}"
@@ -23,5 +23,5 @@ fi
 
 go () { [ -n "$print_commands" ] && puts '`` '"$*" >&2 ; "$@" || exit $? ;}
 
-go babel --source-maps 'inline' --compact 'false' \
-   './giraphe.es6.js' > './giraphe.js'
+
+go babel './giraphe.es6.js' > './giraphe.js'
