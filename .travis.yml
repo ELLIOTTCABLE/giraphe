@@ -1,0 +1,43 @@
+sudo: false
+git:
+   depth: 3
+
+branches:
+   except: /\+$/
+
+language: node_js
+node_js:
+ - "node"
+ - "5"
+ - "4"
+ - "0.12"
+
+env:
+ - CI=yes
+
+
+before_install:
+ - case "$(npm --version)" in 1.*) npm install -g npm ;; esac
+
+before_script:
+ - npm run-script build
+script:
+ - npm run-script test
+
+cache:
+   directories:
+    - node_modules
+
+
+notifications:
+   email: false
+   irc:
+      skip_join: true
+      on_success: never
+      on_failure: change
+      channels:
+       - "chat.freenode.net#ELLIOTTCABLE"
+       - "chat.freenode.net#Paws.Nucleus"
+      template:
+       - "%{repository_name}/%{branch} @%{commit} %{author}: #%{build_number} %{message}"
+       - "(Details: %{build_url})"
