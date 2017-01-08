@@ -184,6 +184,43 @@ describe("giraphe", function(){
             assert(spy.calledWith(foo, bar))
          })
 
+         it("can be partially-applied with callbacks", function(){
+            const root = $.new(); $.key(root)
+            const cb = sinon.spy()
+            var walk = new Walker( $() )
+
+            walk = walk(cb)
+            assert(!cb.called)
+            assert(typeof walk === 'function')
+
+            walk(root)
+            assert(cb.called)
+         })
+
+         it("applies partially-applied callbacks in the order they are provided", function(){
+            const root = $.new(); $.key(root)
+            const first  = sinon.spy(()=> assert(!second.called))
+                , second = sinon.spy(()=> assert(!third.called))
+                , third  = sinon.spy()
+            var walk = new Walker( $() )
+
+            walk = walk(first)
+            assert(!first.called)
+            assert(typeof walk === 'function')
+            walk = walk(second)
+            assert(!first.called)
+            assert(!second.called)
+            assert(typeof walk === 'function')
+
+            walk(root, third)
+            assert(first.called)
+            assert(second.called)
+            assert(third.called)
+         })
+
+         // TODO: Need an integration-level test of partial-application with the *actual
+         //       supplyback/filterback functionality*.
+
 
          describe("~ callbacks", function(){ const they = it
             they("get called on the passed initial node", function(){
