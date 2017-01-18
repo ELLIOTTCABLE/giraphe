@@ -4,6 +4,8 @@ import assert from 'power-assert'
 
 import _ from 'lodash'
 
+const GLOBAL = (null,eval)('this')
+
 
 // TODO: Accept existing `walk()` function to copy options
 // TODO: Accept a set of callbacks to prepend to all walks (to avoid `bind()` stomping on `this`)
