@@ -76,23 +76,34 @@ The options must also include *exactly one* of the `class:` or `predicate:` prop
 
 ### The produced `walk()` function
 Once configured, Giraphe will return to you a function-object, which is to be called with a `root`
-node and a collection of various sorts of `callbacks`. The returned `walk()` function may be called
+node and a collection of various sorts of `callbacks`. The returned `walk()` function may be invoked
 either function-style, or method-style:
 
 ```es6
 const walk = new Walker( ... )
-walk(root, ...)
+walk(root, funcs...)
 
 MyNodeClass.prototype.walk = walk
-root.walk(...)
+root.walk(funcs...)
 ```
 
-The first argument to `walk()` (or alternatively the object upon which it is invoked, if it is
-invoked method-style) must be an object of the `class` passed to the `Walker` constructor (or one
-satisfying the `predicate`, if such was passed instead — henceforth, I'll just call such an object
-“a node.”); that node will be the first walked, that is, the root of the subgraph that gets walked.
+(If invoked without any `root` whatsoever, i.e. only with `Function` objects, the `walk()` function
+ effectively partially-applies those functions — the `walk()` function immediately returns a version
+ of itself that prepends those functions to any others passed.)
 
-Other arguments must be functions; these behave as callbacks manipulating the behaviour of the
+```es6
+const walk = new Walker( ... )
+MyNodeClass.prototype.walk = walk(funcs...)
+root.walk(more_funcs...)
+```
+
+Otherwise, the first argument to `walk()` (or alternatively the object upon which it is invoked, if
+it is invoked method-style) must be an object of the `class` passed to the `Walker` constructor (or
+one satisfying the `predicate`, if such was passed instead — henceforth, I'll just call such an
+object “a node.”). That node will be the first walked, that is, the root of the subgraph that
+`walk()` will process.
+
+All other arguments must be functions; these behave as callbacks manipulating the behaviour of the
 recursive `walk()` process. Such callbacks must behave in one of two ways: as a so-called
 ‘supplier’, or as a ‘filter.’
 
@@ -176,10 +187,11 @@ const MyNode = function(){
    this._children = new Array
    this.id = MyNode.max = (MyNode.max || 0) + 1 }
 
-MyNode.prototype.walk = new Walker({ key: 'id', class: MyNode })
-MyNode.prototype.descendants = MyNode.prototype.walk(node => node.children)
+const walk = new Walker({ key: 'id', class: MyNode })
 
-// ... NYI
+MyNode.prototype.walk = walk
+MyNode.prototype.children = ()=> this._children
+MyNode.prototype.descendants = walk(node => node._children)
 ```
 
 

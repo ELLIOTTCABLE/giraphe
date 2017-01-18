@@ -57,7 +57,29 @@ const constructWalkFunction = function(options){
          root = this
       }
 
+      // If invoked without a `root` (i.e. to partially-apply some callbacks)
+      else if (_.isFunction(root)) {
+         const is_node = options.has_predicate
+                       ? options.predicate.call(root, root)
+                       : root instanceof options.class
+
+         if (!is_node) {
+            callbacks.unshift(root)
+
+            // FIXME: I really need to re-write this to use true partial-application, or recursion,
+            //        or something like that, to store state — that's going to become important when
+            //        I actually implement cacheing. Smeh.
+            options.callbacks = _.concat(options.callbacks || [], callbacks)
+            return invokeWalk
+         }
+      }
+
+      if (!_.isEmpty(options.callbacks)) {
+         callbacks = _.concat(options.callbacks, callbacks)
+      }
+
       debug(`invoking walk([${ callbacks.length }]):`, root)
+      debug(`  (callbacks: [${ callbacks }])`)
       const result = walk(options, [root], [], callbacks, callbacks, SEEN)
 
       if (false === result) /* an `abortIteration` */ return false
