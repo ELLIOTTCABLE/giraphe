@@ -22,20 +22,10 @@ const Walker = function Walker(options, key) {
                            + "a string-ish 'key' property, or an invokable 'keyer' property.")
       options.key = key
    }
-   if (null != options.keyer) {
-      options.has_keyer = true
-   }
 
    if (null == options.class && null == options.predicate)
       throw new TypeError("Walker() must be instantiated with "
                         + "either a 'predicate' or 'class' property.")
-   if (null != options.predicate) {
-      options.has_predicate = true
-   }
-
- //if (null != options.cache) {
- //   options.has_cache = true
- //}
 
    delete options.callbacks // nnnno.
    return constructWalkFunction(options) }
@@ -63,7 +53,7 @@ const constructWalkFunction = function constructWalkFunction(options){          
 
       // If invoked without a `root` (i.e. to partially-apply some callbacks)
       else if (_.isFunction(root)) {
-         const is_node = opts.has_predicate
+         const is_node = null != opts.predicate
                        ? opts.predicate.call(root, root)
                        : root instanceof opts.class
 
@@ -110,7 +100,7 @@ const walk = function walk(opts, path, cachebacks, runbacks, allbacks, SEEN){   
                                                                                                          assert( 0 !== allbacks.length )
    const current = path[0]
        , parent = path[1] || null
-       , KEY = opts.has_keyer
+       , KEY = null != opts.keyer
              ? opts.keyer.call(current, current)
              : current[opts.key]
                                                                                                          assert( typeof KEY === 'string' && KEY !== '' )
@@ -118,7 +108,8 @@ const walk = function walk(opts, path, cachebacks, runbacks, allbacks, SEEN){   
    else SEEN[KEY] = { node: current, accepted: false }
 
    if (debug.enabled) {
-      const path_bits = path.map(bit => opts.has_keyer ? opts.keyer.call(bit, bit) : bit[opts.key])
+      const path_bits = path.map(bit =>
+         null != opts.keyer ? opts.keyer.call(bit, bit) : bit[opts.key])
       debug( 'walk(): ', path_bits.join('→') )                                                   }
 
 
@@ -138,22 +129,22 @@ const walk = function walk(opts, path, cachebacks, runbacks, allbacks, SEEN){   
          aborted = true;                                                            return false }
 
       // else, it's a ‘supply-back’! These return either,
-      const is_node = opts.has_predicate
+      const is_node = null != opts.predicate
                     ? opts.predicate.call(returned, returned)
                     : returned instanceof opts.class
 
       if (is_node) {
-         let key = opts.has_keyer
+         let key = null != opts.keyer
                  ? opts.keyer.call(returned, returned)
                  : returned[opts.key]
                                                                                                          assert( typeof key === 'string' && key !== '' )
                                                                      DISCOVERED[key] = returned }
 
       // 2. an `Array` of nodes,
-      else if (_.isArray(returned)) {                                                                    assert( opts.has_predicate ? _.every(returned, node => opts.predicate.call(node, node))
-                                                                                                                                    : _.every(returned, node => node instanceof opts.class) )
+      else if (_.isArray(returned)) {                                                                    assert( null != opts.predicate ? _.every(returned, node => opts.predicate.call(node, node))
+                                                                                                                                        : _.every(returned, node => node instanceof opts.class) )
          const elements = _.reduce(returned, (elements, node) => {
-            let key = opts.has_keyer
+            let key = null != opts.keyer
                     ? opts.keyer.call(node, node)
                     : key = node[opts.key]
 
@@ -163,8 +154,8 @@ const walk = function walk(opts, path, cachebacks, runbacks, allbacks, SEEN){   
                                                                  _.assign(DISCOVERED, elements) }
 
       // 3. or a generic Object, behaving as a map of keys-to-nodes.
-      else {                                                                                             assert( opts.has_predicate ? _.every(returned, node => opts.predicate.call(node, node))
-                                                                                                                                    : _.every(returned, node => node instanceof opts.class) )
+      else {                                                                                             assert( null != opts.predicate ? _.every(returned, node => opts.predicate.call(node, node))
+                                                                                                                                        : _.every(returned, node => node instanceof opts.class) )
                                                                  _.assign(DISCOVERED, returned) }
 
       return true                                                                                })
