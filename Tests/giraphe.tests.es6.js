@@ -186,29 +186,29 @@ describe("giraphe", function(){
 
          it("can be partially-applied with callbacks", function(){
             const root = $.new(); $.key(root)
-            const cb = sinon.spy()
+            const spy = sinon.spy()
             var walk = new Walker( $() )
 
-            walk = walk(cb)
-            assert(!cb.called)
+            walk = walk(spy)
+            assert(!spy.called)
             assert(typeof walk === 'function')
 
-            walk(root)
-            assert(cb.called)
+            walk(root, function(){})
+            assert(spy.called)
          })
 
          it("partially-applies only to *further copies* of itself", function(){
             const root = $.new(); $.key(root)
-            const cb = sinon.spy()
+            const spy = sinon.spy()
                 , original_walk = new Walker( $() )
 
-            const new_walk = original_walk(cb)
+            const new_walk = original_walk(spy)
 
-            original_walk(root)
-            assert(!cb.called)
+            original_walk(root, function(){})
+            assert(!spy.called)
 
-            new_walk(root)
-            assert(cb.called)
+            new_walk(root, function(){})
+            assert(spy.called)
          })
 
          it("applies partially-applied callbacks in the order they are provided", function(){
