@@ -30,12 +30,11 @@ const Walker = function Walker(options, key) {
    delete options.callbacks // nnnno.
    return constructWalkFunction(options) }
 
-// FIXME: Make proper Symbols. :P
 const symbols = {
-   abortIteration: Walker.abortIteration  = 'abortIteration'
- , walkCache:      Walker.walkCache       = '::walk__do_cache'
- , cachesKey:      Walker.cachesKey       = '::walk__caches'
- , cachebackKey:   Walker.cachebackKey    = '::walk__cachingKey'
+   abortIteration: Walker.abortIteration  = Symbol('abortIteration') // API: abortive return-value
+ , doCaching:      Walker.doCaching       = Symbol('doCaching')      // API: enable caching
+ , cachesKey:      Walker.cachesKey       = Symbol('cachesKey')      // Lib: storage-key for caches
+ , cachebackKey:   Walker.cachebackKey    = Symbol('cachebackKey')   // API: indicate cacheability
 }
 
 // FIXME: Why ... why is any of th... whatever. okay.
