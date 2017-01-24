@@ -71,14 +71,11 @@ const constructWalkFunction = function constructWalkFunction(options){          
          }
       }
 
-      debug('.length: ', callbacks.length)
-      debug('isEmpty: ', _.isEmpty(callbacks))
+      if (!_.isEmpty(opts.callbacks))
+         callbacks = _.concat(opts.callbacks, callbacks)
 
       if (_.isEmpty(callbacks))
          throw new TypeError("walk() may not be invoked without any `callbacks` arguments.")
-
-      if (!_.isEmpty(opts.callbacks))
-         callbacks = _.concat(opts.callbacks, callbacks)
 
       debug(`invoking walk([${ callbacks.length }]):`, root)
       debug(`  (callbacks: [${ callbacks }])`)

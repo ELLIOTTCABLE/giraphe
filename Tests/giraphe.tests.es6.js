@@ -73,6 +73,13 @@ describe("giraphe", function(){
             assert(typeof walk === 'function')
          })
 
+         it("fails if given no callbacks", function(){
+            const root = $.new(); $.key(root)
+            var walk = new Walker( $() )
+
+            assert.throws(()=> walk(root) )
+         })
+
        //if (!$.has_map)
          it("returns an object representing a mapping", function(){
             const root = $.new(); $.key(root)
@@ -186,6 +193,22 @@ describe("giraphe", function(){
             assert(spy.calledWith(foo, bar))
          })
 
+         it("does not throw when partially-applied", function(){
+            var walk = new Walker( $() )
+
+            assert.doesNotThrow(()=> walk(function(){}) )
+         })
+
+         it("can be invoked without an additional immediate callback once partially-applied",
+            function(){
+               const root = $.new(); $.key(root)
+               var walk = new Walker( $() )
+
+               walk = walk(function(){})
+
+               assert.doesNotThrow(()=> walk(root) )
+         })
+
          it("can be partially-applied with callbacks", function(){
             const root = $.new(); $.key(root)
             const spy = sinon.spy()
@@ -195,7 +218,7 @@ describe("giraphe", function(){
             assert(!spy.called)
             assert(typeof walk === 'function')
 
-            walk(root, function(){})
+            walk(root)
             assert(spy.called)
          })
 
@@ -209,7 +232,7 @@ describe("giraphe", function(){
             original_walk(root, function(){})
             assert(!spy.called)
 
-            new_walk(root, function(){})
+            new_walk(root)
             assert(spy.called)
          })
 
