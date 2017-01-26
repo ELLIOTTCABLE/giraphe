@@ -105,7 +105,7 @@ describe("giraphe", function(){
             assert.throws(()=> walk(root) )
          })
 
-       //if (!$.has_map)
+       //if (!$.testing_map)
          it("returns an object representing a mapping", function(){
             const root = $.new(); $.key(root)
             var walk = new Walker( $() )
@@ -114,7 +114,7 @@ describe("giraphe", function(){
             assert(null != result && typeof result === 'object')
          })
 
-         if ($.has_class)
+         if ($.testing_class)
          it("returns a mapping of the given class", function(){
             const root = $.new(); $.key(root)
             var walk = new Walker( $() )
@@ -486,38 +486,112 @@ describe("giraphe", function(){
 
 
 function generatePermutations(){
-   // FIXME: This is pending a fix to sinon#1002:
-   //        <https://github.com/sinonjs/sinon/issues/1002#issuecomment-266903866>
-   //const id = Symbol('id')
-   const id = '--this-is-an-id-i-guess-idk'
-       , Node = class {}
-   const permutables = [
-      // Matched pairs; the first element being keys to add to the constructed `options` argument,
-      // and the second being methods / keys to add to the options-constructor as context (i.e. the
-      // first sets `$().class`, the second sets `$.new()`.)
-      //
-      // The first option is the default, when ‘PERMUTATE’ isn't set.
-      [  {  desc: 'class', opts: { class: Node }
-         ,  helpers: {  has_class: true
-                     ,  new: function(){ return new Node }                                      }}
-      ,  {  desc: 'pred',  opts: { predicate: (it)=> it.isNode  }
-         ,  helpers: {  has_predicate: true
-                     ,  new: function(){ return { isNode: true } }                              }}]
+   // FIXME: This is pending a fix to [sinon#1002][1], which [looks like][2] it should land a little
+   //        later this year. For the moment, I'm using a pre-release Sinon. Yikes.
+   //
+   //        [1]: <https://github.com/sinonjs/sinon/issues/1002#issuecomment-266903866>
+   //        [2]: <https://github.com/sinonjs/sinon/issues/966#issuecomment-274249586>
+ //const id = Symbol('id')
+   const sym = '::this-is-an-id-i-guess-idk'
+       , Node = class {}, Edge = class {}
+       , permutables = []
 
-    , [  {  desc: 'key',   opts: { key: 'id' }
-         ,  helpers: {  has_key: true
-                     ,  key: it => it['id'] = rand()                                            }}
-      ,  {  desc: 'keyer', opts: { keyer: it => it[id] }
-         ,  helpers: {  has_keyer: true,
-                        key: it => it[id] = rand()                                              }}]
+   // Matched pairs; the first element being keys to add to the constructed `options` argument, and
+   // the second being methods / keys to add to the options-constructor as context (i.e. the first
+   // sets `$().class`, the second sets `$.new()`.)
+   //
+   // The first option is the default, when ‘PERMUTATE’ isn't set.
+   // Each option to iterate over has a `name` (printed during the evaluation of the tests), some
+   // keys in `options` to add to the options-object passed to the `Walker()` constructor, and some
+   // `helpers`-values to expose on `$` for examination or calling during tests.
+   const klass = {
+      name: 'class'
+    , options: { class: Node }
+    , helpers: {
+         testing_class: true
+       , new: function(){ return new Node }
+      }
+   }
 
-    , [  { desc: null,    opts: {} }
-      ,  { desc: 'cache', opts: {cache: true} }                                                 ]
-   ]
+   const predicate = {
+      name: 'pred'
+    , options: { predicate: it => it.isNode  }
+    , helpers: {
+         testing_predicate: true
+       , new: function(){ return { isNode: true } }
+      }
+   }
+
+   const key = {
+      name: 'key'
+    , options: { key: 'id' }
+    , helpers: {
+         testing_key: true
+       , key: it => it['id'] = rand()
+      }
+   }
+
+   const keyer = {
+      name: 'keyer'
+    , options: { keyer: it => it[sym] }
+    , helpers: {
+         testing_keyer: true
+       , key: it => it[sym] = rand()
+      }
+   }
+
+   // FIXME: Ugh, these aren't fully-permuted. w/e.
+   const edgeless = { name: 'edgeless', options: {} }
+
+   const edge_basic = {
+      name: 'edge'
+    , options: { edge: {class: Edge, extract_path: 'target'} }
+    , helpers: {
+         testing_edge_class: true
+       , testing_edge_path: true
+       , edge_to: node => {
+            const it = new Edge()
+            it.target = node
+            return it
+         }
+      }
+   }
+
+   const edge_predicate = {
+      name: 'edge-pred'
+    , options: { edge: {predicate: (it => it.isEdge), extract_path: 'target'} }
+    , helpers: {
+         testing_edge_predicate: true
+       , testing_edge_path: true
+       , edge_to: node => ({ isEdge: true, target: node })
+      }
+   }
+
+   const edge_extractor = {
+      name: 'edge-extractor'
+    , options: { edge: {class: Edge, extractor: it => it[target_sym] } }
+    , helpers: {
+         testing_edge_class: true
+       , testing_edge_extractor: true
+       , edge_to: node => {
+            const it = new Edge()
+            it[target_sym] = node
+            return it
+         }
+      }
+   }
+
+   // NYI: Caching!
+ //const cache = ...
 
    // FIXME: Hm. `key` (whether function or string) is obviously only meaningful for Object-map
    // interfaces; this will need to be tweaked not to permutate over other combinations.
-   //, [[ { something_to_do_with_sets: true } ], [ { something_to_do_with_maps: false } ]]
+ //, [[ { something_to_do_with_sets: true } ], [ { something_to_do_with_maps: false } ]]
+
+   permutables.push([klass, predicate])
+   permutables.push([key, keyer])
+   permutables.push([edgeless, edge_basic, edge_predicate, edge_extractor])
+
 
    const PERMUTATE = process.env['PERMUTATE'] && process.env['PERMUTATE'] !== 'no'
    if   (PERMUTATE) {
@@ -537,17 +611,17 @@ function generatePermutations(){
          for (const possibility of possibilities) {
             if (0 === rest.length) {
                const    permutation = { labels: [], options: {}, helpers: {} }
-               _.assign(permutation.options, possibility.opts)
+               _.assign(permutation.options, possibility.options)
                _.assign(permutation.helpers, possibility.helpers)
-               permutation.labels.push(possibility.desc)
+               permutation.labels.push(possibility.name)
 
                results.push(permutation) }
 
             else for (const sub of permutate(rest)) {
                const    permutation = { labels: [], options: {}, helpers: {} }
-               _.assign(permutation.options, possibility.opts,    sub.options)
+               _.assign(permutation.options, possibility.options, sub.options)
                _.assign(permutation.helpers, possibility.helpers, sub.helpers)
-               permutation.labels.push(possibility.desc, ...sub.labels)
+               permutation.labels.push(possibility.name, ...sub.labels)
 
                results.push(permutation) }
          }
@@ -568,7 +642,7 @@ function generatePermutations(){
 
          let defaults_seen;
          for (let i = 0; i < permutables.length; i++) {
-            const possibilities = permutables[i]
+            const possibilities = permutables[i].slice()
 
             if (defaults_seen) possibilities.shift()
             defaults_seen = true
@@ -579,14 +653,18 @@ function generatePermutations(){
                const permutation  = { labels: [], options: {}, helpers: {} }
 
                for (let k = 0; k < permutables.length; k++) {
-                  if (k == i) continue;
-                  const normal_case = permutables[k][0]
+                  if (k === i) {
+                     _.assign(permutation.options, possibility.options)
+                     _.assign(permutation.helpers, possibility.helpers)
+                     permutation.labels.push(possibility.name)
+                  } else {
+                     const normal_case = permutables[k][0]
 
-                  _.assign(permutation.options, normal_case.opts)
-                  _.assign(permutation.helpers, normal_case.helpers) }
-
-               _.assign(permutation.options, possibility.opts)
-               _.assign(permutation.helpers, possibility.helpers)
+                     _.assign(permutation.options, normal_case.options)
+                     _.assign(permutation.helpers, normal_case.helpers)
+                     permutation.labels.push(normal_case.name)
+                  }
+               }
 
                results.push(permutation) }
          }
