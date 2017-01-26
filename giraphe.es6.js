@@ -7,9 +7,19 @@ import _ from 'lodash'
 const GLOBAL = (null,eval)('this')
 
 
+const symbols = {
+   abortIteration: Walker.abortIteration= Symbol('abortIteration') // API: abortive return-value
+
+ , nodeAccepted:                          Symbol('nodeAccepted')   // Lib: tracks acceptance
+
+ , doCaching:     Walker.doCaching      = Symbol('doCaching')      // API: enable caching
+ , cachesKey:                             Symbol('caches')         // Lib: storage-key for caches
+ , cachebackKey:  Walker.cachebackKey   = Symbol('cachebackKey')   // API: indicate cacheability
+}
+
 // TODO: Accept existing `walk()` function to copy options
 // TODO: Accept a set of callbacks to prepend to all walks (to avoid `bind()` stomping on `this`)
-const Walker = function Walker(options, key) {
+function Walker(options, key) {
 
    if (_.isFunction(options))
       options = { class: options }
@@ -18,34 +28,49 @@ const Walker = function Walker(options, key) {
 
    if (null == options.key && null == options.keyer) {
       if (null == key)
-         throw new TypeError("Walker() must be instantiated with "
-                           + "a string-ish 'key' property, or an invokable 'keyer' property.")
+         throw new TypeError(
+`Walker() must be instantiated with an \`options\` object including either
+   a \`key\` or \`keyer\` property.`)
+
       options.key = key
    }
 
    if (null == options.class && null == options.predicate)
-      throw new TypeError("Walker() must be instantiated with "
-                        + "either a 'predicate' or 'class' property.")
+      throw new TypeError(
+`Walker() must be instantiated with an \`options\` object including either
+   a \`predicate\` or \`class\` property.`)
+
+   const edge = options.edge
+   if (null != edge) {
+      if (null == edge.class        && null == edge.predicate
+       && null == edge.extract_path && null == edge.extractor)
+         delete options.edge
+
+      else if (null == edge.class && null == edge.predicate)
+         throw new TypeError(
+`If instantiated with \`edge\` options, Walker() construction requires
+   either an \`edge.class\` or an \`edge.predicate\` sub-property.`)
+
+      else if (null == edge.extract_path && null == edge.extractor)
+         throw new TypeError(
+`If instantiated with \`edge\` options, Walker() construction requires
+   either an \`edge.extract_path\` or an \`edge.extractor\` sub-property.`)
+   }
 
    delete options.callbacks // nnnno.
    return constructWalkFunction(options) }
 
-const symbols = {
-   abortIteration: Walker.abortIteration  = Symbol('abortIteration') // API: abortive return-value
- , doCaching:      Walker.doCaching       = Symbol('doCaching')      // API: enable caching
- , cachesKey:      Walker.cachesKey       = Symbol('cachesKey')      // Lib: storage-key for caches
- , cachebackKey:   Walker.cachebackKey    = Symbol('cachebackKey')   // API: indicate cacheability
-}
 
 // FIXME: Why ... why is any of th... whatever. okay.
 const constructWalkFunction = function constructWalkFunction(options){                                   assert(null != options)
-   const opts = _.assign(new Object, options)
+   const opts = _.assign(Object.create(null), options)
 
    return function invokeWalk(root, ...callbacks){
-      const SEEN = new Object
+      // NYI: This should eventually support building/returning a Map, instead
+      const SEEN = Object.create(null)
 
       // If method-invoked, `root.walk(...)`
-      if (typeof this !== 'undefined' && this !== (null,eval)('this')) {
+      if (typeof this !== 'undefined' && this !== GLOBAL) {
          callbacks.unshift(root)
          root = this
       }
@@ -64,7 +89,7 @@ const constructWalkFunction = function constructWalkFunction(options){          
             debug(`currying walk([${ (opts.callbacks || []).length }])`)
             debug(`  (additional callbacks: [${ callbacks }])`)
 
-            const options = _.assign(new Object, opts)
+            const options = _.assign(Object.create(null), opts)
             options.callbacks = _.concat(opts.callbacks || [], callbacks)
 
             return constructWalkFunction(options)
@@ -77,44 +102,46 @@ const constructWalkFunction = function constructWalkFunction(options){          
       if (_.isEmpty(callbacks))
          throw new TypeError("walk() may not be invoked without any `callbacks` arguments.")
 
+      // FIXME: Instead of communicating by passing around the `SEEN` world-state, this should
+      //        *properly* use return-values
       debug(`invoking walk([${ callbacks.length }]):`, root)
       debug(`  (callbacks: [${ callbacks }])`)
-      const result = walk(opts, [root], [], callbacks, callbacks, SEEN)
+      const result = walk(opts, [root], null, [], callbacks, callbacks, SEEN)
 
       if (false === result) /* an `abortIteration` */ return false
 
       for (let key of Object.keys(SEEN)) {
-         if (!SEEN[key].accepted) delete SEEN[key]
-         else SEEN[key] = SEEN[key].node
-      }
+         if (!SEEN[key][symbols.nodeAccepted]) delete SEEN[key]
+         else delete SEEN[key][symbols.nodeAccepted] }
 
-      return SEEN }
-}
+      return SEEN }}
 
-const walk = function walk(opts, path, cachebacks, runbacks, allbacks, SEEN){                            assert( null != path )
+
+function walk(opts, path, via, cachebacks, runbacks, allbacks, SEEN){                                    assert( null != path )
                                                                                                          assert( null != path[0] )
                                                                                                          assert( 0 !== allbacks.length )
    const current = path[0]
-       , parent = path[1] || null
-       , KEY = null != opts.keyer
+       , parent  = path[1] || null
+
+   const KEY = null != opts.keyer
              ? opts.keyer.call(current, current)
              : current[opts.key]
                                                                                                          assert( typeof KEY === 'string' && KEY !== '' )
-   if  (SEEN[KEY] && SEEN[KEY].accepted) return null
-   else SEEN[KEY] = { node: current, accepted: false }
+   if  (SEEN[KEY] && SEEN[KEY][symbols.nodeAccepted])                               return null
+   else SEEN[KEY] = current
 
    if (debug.enabled) {
-      const path_bits = path.map(bit =>
+      const path_bits = path.slice().reverse().map(bit =>
          null != opts.keyer ? opts.keyer.call(bit, bit) : bit[opts.key])
       debug( 'walk(): ', path_bits.join('→') )                                                   }
 
 
-   const DISCOVERED = new Object
+   const DISCOVERED = Object.create(null)
    let   aborted = false
      ,   rejected = false
 
    rejected = ! _.every(runbacks, callback => {
-      const returned = callback.call(current, current, parent, allbacks)
+      const returned = callback.call(current, via || current, parent, allbacks)
 
       // If it returns a boolean, or nothing at all, then it's a ‘filter-back’,
       if (false === returned)                                                       return false
@@ -125,53 +152,107 @@ const walk = function walk(opts, path, cachebacks, runbacks, allbacks, SEEN){   
          aborted = true;                                                            return false }
 
       // else, it's a ‘supply-back’! These return either,
+      // 1. a direct node (or edge),
       const is_node = null != opts.predicate
-                    ? opts.predicate.call(returned, returned)
-                    : returned instanceof opts.class
+                            ? opts.predicate.call(returned, returned)
+                            : returned instanceof opts.class
 
-      if (is_node) {
-         let key = null != opts.keyer
-                 ? opts.keyer.call(returned, returned)
-                 : returned[opts.key]
+          , is_edge = null != opts.edge &&
+                     (null != opts.edge.predicate
+                            ? opts.edge.predicate.call(returned, returned)
+                            : returned instanceof opts.edge.class)
+
+      if (is_edge) {
+         const node = null != opts.edge.extractor
+                            ? opts.edge.extractor.call(returned, returned)
+                            : returned[opts.edge.extract_path]
+             , key  = null != opts.keyer
+                            ? opts.keyer.call(node, node)
+                            : node[opts.key]
                                                                                                          assert( typeof key === 'string' && key !== '' )
-                                                                     DISCOVERED[key] = returned }
+         if (null == DISCOVERED[key])
+            DISCOVERED[key] = { node: node, edges: [] }
 
-      // 2. an `Array` of nodes,
-      else if (_.isArray(returned)) {                                                                    assert( null != opts.predicate ? _.every(returned, node => opts.predicate.call(node, node))
-                                                                                                                                        : _.every(returned, node => node instanceof opts.class) )
-         const elements = _.reduce(returned, (elements, node) => {
-            let key = null != opts.keyer
-                    ? opts.keyer.call(node, node)
-                    : key = node[opts.key]
+         DISCOVERED[key].edges.push(returned) }
 
-            elements[key] = node
-            return elements
-         }, new Object)
-                                                                 _.assign(DISCOVERED, elements) }
+      else if (is_node) {
+         const key = null != opts.keyer
+                           ? opts.keyer.call(returned, returned)
+                           : returned[opts.key]
+                                                                                                         assert( typeof key === 'string' && key !== '' )
+         if (null == DISCOVERED[key])
+            DISCOVERED[key] = { node: returned, edges: [] } }
+
+      // 2. an `Array` of nodes / edges,
+      // FIXME: This is doing some unnecessary runtime-effort, pending power-assert#76:
+      //        <https://github.com/power-assert-js/power-assert/issues/76>
+      else if (_.isArray(returned)) {
+         for (let element of returned) {
+            const is_node = null != opts.predicate
+                                  ? opts.predicate.call(element, element)
+                                  : element instanceof opts.class
+
+                , is_edge = null != opts.edge &&
+                           (null != opts.edge.predicate
+                                  ? opts.edge.predicate.call(element, element)
+                                  : element instanceof opts.edge.class)
+                                                                                                         assert( null != element && is_node || is_edge )
+            if (is_edge) {
+               const node = null != opts.edge.extractor
+                                  ? opts.edge.extractor.call(element, element)
+                                  : element[opts.edge.extract_path]
+                   , key  = null != opts.keyer
+                                  ? opts.keyer.call(node, node)
+                                  : node[opts.key]
+                                                                                                         assert( typeof key === 'string' && key !== '' )
+               if (null == DISCOVERED[key])
+                  DISCOVERED[key] = { node: node, edges: [] }
+
+               DISCOVERED[key].edges.push(element)
+            } else {
+               const key = null != opts.keyer
+                                 ? opts.keyer.call(element, element)
+                                 : element[opts.key]
+                                                                                                         assert( typeof key === 'string' && key !== '' )
+               if (null == DISCOVERED[key])
+                  DISCOVERED[key] = { node: element, edges: [] }
+            } } }
 
       // 3. or a generic Object, behaving as a map of keys-to-nodes.
-      else {                                                                                             assert( null != opts.predicate ? _.every(returned, node => opts.predicate.call(node, node))
-                                                                                                                                        : _.every(returned, node => node instanceof opts.class) )
-                                                                 _.assign(DISCOVERED, returned) }
+      else
+         for (var their_key in returned) { if (returned.hasOwnProperty(their_key)) {
+            const node = returned[their_key]                                                           ; assert( null != opts.predicate ? opts.predicate.call(node, node) : node instanceof opts.class )
+            const key  = null != opts.keyer
+                               ? opts.keyer.call(node, node)
+                               : node[opts.key]
+                                                                                                         assert( typeof key === 'string' && key !== '' )
+            if (null == DISCOVERED[key])
+               DISCOVERED[key] = { node: node, edges: [] }
+         }}
 
       return true                                                                                })
 
-   if (aborted)  /* If walk() returns `false`, it immediately propagates upwards, */return false
-   if (rejected) /* but if it was rejected, then merely add nothing on this step */ return {}
+   if (aborted)  /* so `false` immediately propagates upwards, */                   return false
+   if (rejected) /* but an empty object merely adds nothing on this step */         return {}
 
-                 // ... else, the current node passed all filters, so we can mark this node as
-                 // accepted, and recurse into discovered nodes
-   SEEN[KEY].accepted = true
+   current[symbols.nodeAccepted] = true
 
    // XXX: depth-first traversal? Should this be configurable?
    for (let key of Object.keys(DISCOVERED)) {
-      const node = DISCOVERED[key]
+      const discovered = DISCOVERED[key]
           , sub_path = path.slice()
-            sub_path.unshift(node)
+            sub_path.unshift(discovered.node)
 
-      const result = walk(opts, sub_path, cachebacks, runbacks, allbacks, SEEN)
+      if (_.isEmpty(discovered.edges))
+         discovered.edges.push(null)
 
-      if (false === result) /* The only non-Object result is an `abortIteration` */ return false }}
+      for (let edge of discovered.edges) {
+         const result = walk(opts, sub_path, edge, cachebacks, runbacks, allbacks, SEEN)
+
+         if (false === result)
+            return false
+      }} }
+
 
 
 export { Walker }
