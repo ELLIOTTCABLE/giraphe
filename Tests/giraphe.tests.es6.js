@@ -60,6 +60,31 @@ describe("giraphe", function(){
          assert.throws(function(){ new Walker(   ) })
       })
 
+      it("accepts a description of edge-structure", function(){
+         class Node {}; class Edge {}
+         assert.doesNotThrow(function(){
+            new Walker({ class: Node, key: 'id',
+                         edge: { class: Edge, extract_path: 'target' } }) })
+         assert.doesNotThrow(function(){
+            new Walker({ class: Node, key: 'id',
+                         edge: { predicate: function(){}, extract_path: 'target' } }) })
+         assert.doesNotThrow(function(){
+            new Walker({ class: Node, key: 'id',
+                         edge: { class: Edge, extractor: function(){} } }) })
+      })
+
+      it("throws if edge-structure is missing a component", function(){
+         class Node {}; class Edge {}
+         assert.throws(function(){ new Walker({ class: Node, key: 'id',
+            edge: { class: Edge } }) })
+         assert.throws(function(){ new Walker({ class: Node, key: 'id',
+            edge: { predicate: function(){} } }) })
+         assert.throws(function(){ new Walker({ class: Node, key: 'id',
+            edge: { extract_path: 'target' } }) })
+         assert.throws(function(){ new Walker({ class: Node, key: 'id',
+            edge: { extractor: function(){} } }) })
+      })
+
 
    }) // ~ The Walker constructor
 

@@ -18,14 +18,34 @@ const Walker = function Walker(options, key) {
 
    if (null == options.key && null == options.keyer) {
       if (null == key)
-         throw new TypeError("Walker() must be instantiated with "
-                           + "a string-ish 'key' property, or an invokable 'keyer' property.")
+         throw new TypeError(
+`Walker() must be instantiated with an \`options\` object including either
+   a \`key\` or \`keyer\` property.`)
+
       options.key = key
    }
 
    if (null == options.class && null == options.predicate)
-      throw new TypeError("Walker() must be instantiated with "
-                        + "either a 'predicate' or 'class' property.")
+      throw new TypeError(
+`Walker() must be instantiated with an \`options\` object including either
+   a \`predicate\` or \`class\` property.`)
+
+   const edge = options.edge
+   if (null != edge) {
+      if (null == edge.class        && null == edge.predicate
+       && null == edge.extract_path && null == edge.extractor)
+         delete options.edge
+
+      else if (null == edge.class && null == edge.predicate)
+         throw new TypeError(
+`If instantiated with \`edge\` options, Walker() construction requires
+   either an \`edge.class\` or an \`edge.predicate\` sub-property.`)
+
+      else if (null == edge.extract_path && null == edge.extractor)
+         throw new TypeError(
+`If instantiated with \`edge\` options, Walker() construction requires
+   either an \`edge.extract_path\` or an \`edge.extractor\` sub-property.`)
+   }
 
    delete options.callbacks // nnnno.
    return constructWalkFunction(options) }
