@@ -1,8 +1,9 @@
+node_modules
 *.es6.js*
 
 build.sh
 test.sh
 
 Docs/Coverage/*
-
+.nyc_output/*
 **/tags
