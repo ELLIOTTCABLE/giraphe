@@ -115,12 +115,13 @@ describe("giraphe", function(){
          })
 
          if ($.testing_class)
-         it("returns a mapping of the given class", function(){
-            const root = $.new(); $.key(root)
+         it("returns a mapping of keys to the given class", function(){
+            const root = $.new(), root_key = $.key(root)
             var walk = new Walker( $() )
 
             var result = walk(root, new Function)
-            assert(null != result && typeof result === 'object')
+            assert(null != result    && typeof result === 'object')
+            assert(null != result[root_key] && result[root_key] instanceof $.Node)
          })
 
          it("collects the root node, if it's not rejected", function(){
@@ -493,7 +494,8 @@ function generatePermutations(){
    //        [2]: <https://github.com/sinonjs/sinon/issues/966#issuecomment-274249586>
  //const id = Symbol('id')
    const sym = '::this-is-an-id-i-guess-idk'
-       , Node = class {}, Edge = class {}
+       , Node = class {},              Edge = class {}
+       , isNode = (it => it.isNode), isEdge = (it => it.isEdge)
        , permutables = []
 
    // Matched pairs; the first element being keys to add to the constructed `options` argument, and
@@ -509,6 +511,7 @@ function generatePermutations(){
     , options: { class: Node }
     , helpers: {
          testing_class: true
+       , Node: Node
        , new: function(){ return new Node }
       }
    }
@@ -518,6 +521,7 @@ function generatePermutations(){
     , options: { predicate: it => it.isNode  }
     , helpers: {
          testing_predicate: true
+       , isNode: isNode
        , new: function(){ return { isNode: true } }
       }
    }
@@ -549,6 +553,7 @@ function generatePermutations(){
     , helpers: {
          testing_edge_class: true
        , testing_edge_path: true
+       , Edge: Edge
        , edge_to: node => {
             const it = new Edge()
             it.target = node
@@ -563,6 +568,7 @@ function generatePermutations(){
     , helpers: {
          testing_edge_predicate: true
        , testing_edge_path: true
+       , isEdge: isEdge
        , edge_to: node => ({ isEdge: true, target: node })
       }
    }
@@ -573,6 +579,7 @@ function generatePermutations(){
     , helpers: {
          testing_edge_class: true
        , testing_edge_extractor: true
+       , Edge: Edge
        , edge_to: node => {
             const it = new Edge()
             it[target_sym] = node
