@@ -186,6 +186,28 @@ describe("giraphe", function(){
             assert(Object.keys(rv).length === 0)
          })
 
+         if ($.testing_edge)
+         it ("returns collected nodes themselves, even when callbacks supply edges", function(){
+            const root = $.new(),         A = $.new(),      B = $.new()
+                , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B)
+                , root_to_A = $.edge_to(A), A_to_B = $.edge_to(B)
+
+            const cb = node => {
+               if (node === root) return root_to_A
+               if (node === A)    return A_to_B
+            }
+
+            var walk = new Walker( $() )
+            var rv = walk(root, cb)
+
+            assert.ok(rv)
+            assert(Object.keys(rv).length === 3)
+            assert(rv[root_key] === root)
+            assert(rv[A_key] === A)
+            assert(rv[B_key] === B)
+         })
+
+
          it("can be short-circuited by returning the abortIteration sentinel", function(){
             const root = $.new(),         A = $.new(),      B = $.new()
                 , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B)
@@ -551,7 +573,8 @@ function generatePermutations(){
       name: 'edge'
     , options: { edge: {class: Edge, extract_path: 'target'} }
     , helpers: {
-         testing_edge_class: true
+         testing_edge: true
+       , testing_edge_class: true
        , testing_edge_path: true
        , Edge: Edge
        , edge_to: node => {
@@ -566,7 +589,8 @@ function generatePermutations(){
       name: 'edge-pred'
     , options: { edge: {predicate: (it => it.isEdge), extract_path: 'target'} }
     , helpers: {
-         testing_edge_predicate: true
+         testing_edge: true
+       , testing_edge_predicate: true
        , testing_edge_path: true
        , isEdge: isEdge
        , edge_to: node => ({ isEdge: true, target: node })
@@ -577,7 +601,8 @@ function generatePermutations(){
       name: 'edge-extractor'
     , options: { edge: {class: Edge, extractor: it => it[target_sym] } }
     , helpers: {
-         testing_edge_class: true
+         testing_edge: true
+       , testing_edge_class: true
        , testing_edge_extractor: true
        , Edge: Edge
        , edge_to: node => {
