@@ -7,9 +7,17 @@ import _ from 'lodash'
 const GLOBAL = (null,eval)('this')
 
 
+const symbols = {
+   abortIteration: Walker.abortIteration= Symbol('abortIteration') // API: abortive return-value
+
+ , doCaching:     Walker.doCaching      = Symbol('doCaching')      // API: enable caching
+ , cachesKey:                             Symbol('caches')         // Lib: storage-key for caches
+ , cachebackKey:  Walker.cachebackKey   = Symbol('cachebackKey')   // API: indicate cacheability
+}
+
 // TODO: Accept existing `walk()` function to copy options
 // TODO: Accept a set of callbacks to prepend to all walks (to avoid `bind()` stomping on `this`)
-const Walker = function Walker(options, key) {
+function Walker(options, key) {
 
    if (_.isFunction(options))
       options = { class: options }
@@ -50,12 +58,6 @@ const Walker = function Walker(options, key) {
    delete options.callbacks // nnnno.
    return constructWalkFunction(options) }
 
-const symbols = {
-   abortIteration: Walker.abortIteration  = Symbol('abortIteration') // API: abortive return-value
- , doCaching:      Walker.doCaching       = Symbol('doCaching')      // API: enable caching
- , cachesKey:      Walker.cachesKey       = Symbol('cachesKey')      // Lib: storage-key for caches
- , cachebackKey:   Walker.cachebackKey    = Symbol('cachebackKey')   // API: indicate cacheability
-}
 
 // FIXME: Why ... why is any of th... whatever. okay.
 const constructWalkFunction = function constructWalkFunction(options){                                   assert(null != options)
@@ -111,7 +113,7 @@ const constructWalkFunction = function constructWalkFunction(options){          
       return SEEN }
 }
 
-const walk = function walk(opts, path, cachebacks, runbacks, allbacks, SEEN){                            assert( null != path )
+function walk(opts, path, cachebacks, runbacks, allbacks, SEEN){                                         assert( null != path )
                                                                                                          assert( null != path[0] )
                                                                                                          assert( 0 !== allbacks.length )
    const current = path[0]
