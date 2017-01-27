@@ -61,13 +61,14 @@ function Walker(options, key) {
 
 // FIXME: Why ... why is any of th... whatever. okay.
 const constructWalkFunction = function constructWalkFunction(options){                                   assert(null != options)
-   const opts = _.assign(new Object, options)
+   const opts = _.assign(Object.create(null), options)
 
    return function invokeWalk(root, ...callbacks){
-      const SEEN = new Object
+      // NYI: This should eventually support building/returning a Map, instead
+      const SEEN = Object.create(null)
 
       // If method-invoked, `root.walk(...)`
-      if (typeof this !== 'undefined' && this !== (null,eval)('this')) {
+      if (typeof this !== 'undefined' && this !== GLOBAL) {
          callbacks.unshift(root)
          root = this
       }
@@ -86,7 +87,7 @@ const constructWalkFunction = function constructWalkFunction(options){          
             debug(`currying walk([${ (opts.callbacks || []).length }])`)
             debug(`  (additional callbacks: [${ callbacks }])`)
 
-            const options = _.assign(new Object, opts)
+            const options = _.assign(Object.create(null), opts)
             options.callbacks = _.concat(opts.callbacks || [], callbacks)
 
             return constructWalkFunction(options)
@@ -131,7 +132,7 @@ function walk(opts, path, cachebacks, runbacks, allbacks, SEEN){                
       debug( 'walk(): ', path_bits.join('→') )                                                   }
 
 
-   const DISCOVERED = new Object
+   const DISCOVERED = Object.create(null)
    let   aborted = false
      ,   rejected = false
 
