@@ -190,9 +190,9 @@ describe("giraphe", function(){
                 , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B)
                 , root_to_A = $.edge_to(A), A_to_B = $.edge_to(B)
 
-            const cb = node => {
-               if (node === root) return root_to_A
-               if (node === A)    return A_to_B
+            const cb = function(){
+               if (this === root) return root_to_A
+               if (this === A)    return A_to_B
             }
 
             var walk = new Walker( $() )
@@ -514,6 +514,7 @@ function generatePermutations(){
    //        [2]: <https://github.com/sinonjs/sinon/issues/966#issuecomment-274249586>
  //const id = Symbol('id')
    const sym = '::this-is-an-id-i-guess-idk'
+       , target_sym = '::you-can-find-the-target-here?-i-guess?'
        , Node = class {},              Edge = class {}
        , isNode = (it => it.isNode), isEdge = (it => it.isEdge)
        , permutables = []
