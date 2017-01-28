@@ -219,8 +219,7 @@ describe("giraphe", function(){
             assert(rv === false)
          })
 
-         it("will re-discover a previously-rejected node via a different path",
-         function(){
+         it("will re-visit a previously-rejected node via a different path", function(){
             const root = $.new(), root_key = $.key(root)
                 , foo  = $.new()       , bar = $.new()
                 , foo_key  = $.key(foo), bar_key = $.key(bar)
@@ -237,6 +236,32 @@ describe("giraphe", function(){
 
             assert(spy.neverCalledWith(foo, root))
             assert(spy.calledWith(foo, bar))
+
+            assert(rv[foo_key] === foo)
+         })
+
+         if ($.testing_edge)
+         it ("will re-visit a previously-rejected node via a different edge", function(){
+            const root = $.new(), root_key = $.key(root)
+                , foo  = $.new()       , bar = $.new()
+                , foo_key  = $.key(foo), bar_key = $.key(bar)
+                , root_to_foo = $.edge_to(foo), root_to_bar = $.edge_to(bar)
+                , bar_to_foo = $.edge_to(foo)
+
+            const first = node => { if (node === root) return [root_to_foo, root_to_bar] }
+                , second = node => { if (node === bar) return bar_to_foo }
+                , filter = edge => { if (edge === root_to_foo) return false }
+
+            const spy = sinon.spy()
+
+            var walk = new Walker( $() )
+            var rv = walk(root, first, second, filter, spy)
+
+            assert(spy.neverCalledWith(root_to_foo))
+            assert(spy.calledOn(foo))
+            assert(spy.calledWith(bar_to_foo))
+
+            assert(rv[foo_key] === foo)
          })
 
          it("does not throw when partially-applied", function(){
