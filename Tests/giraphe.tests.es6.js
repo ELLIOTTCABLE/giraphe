@@ -9,8 +9,6 @@ const __ = match.any
 import { Walker } from '../giraphe.es6.js'
 
 
-debugger
-
 // I produce tests generatively, iterating over the possible forms of invocation. (Some tests
 // are made exclusive to a particular form via a conditional, or by being left out of the
 // iteration.)
