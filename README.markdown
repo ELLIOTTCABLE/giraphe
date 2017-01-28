@@ -107,12 +107,11 @@ All other arguments must be functions; these behave as callbacks manipulating th
 recursive `walk()` process. Such callbacks must behave in one of two ways: as a so-called
 ‘supplier’, or as a ‘filter.’
 
-All callbacks are invoked with the same arguments (*none of which* may be safely modified):
+All callbacks are invoked with the same arguments (which must not be modified during the callback's
+evaluation):
 
  - The `current` node being visited,
  - the `parent` node that was being visited when a supplier-callback yielded that `current` node,
- - a set-map (`key`-to-node-object) of nodes `supplied` by *prior* suppliers during *this visit*,
- - a set-map of *all* nodes `seen` during the walk thus far (including rejected nodes),
  - and the complete list of `callbacks` with which the current `walk()` is operating.
 
 When all discovered nodes in the graph have been exhausted, `walk()` produces a final object-mapping

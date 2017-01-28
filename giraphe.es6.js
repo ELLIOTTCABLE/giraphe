@@ -114,7 +114,7 @@ const walk = function walk(opts, path, cachebacks, runbacks, allbacks, SEEN){   
      ,   rejected = false
 
    rejected = ! _.every(runbacks, callback => {
-      const returned = callback.call(current, current, parent, DISCOVERED, SEEN, allbacks)
+      const returned = callback.call(current, current, parent, allbacks)
 
       // If it returns a boolean, or nothing at all, then it's a ‘filter-back’,
       if (false === returned)                                                       return false

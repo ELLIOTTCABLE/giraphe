@@ -318,103 +318,6 @@ describe("giraphe", function(){
                assert(spy.calledWith(__, parent))
             })
 
-            // FIXME: Clean this mess up (chanted to the tune of ‘Smack My Bitch Up’ — Prodigy)
-            they("receive the peer-nodes discovered by prior callbacks on the same node", function(){
-               const root = $.new(),         A = $.new(),      B = $.new()
-                   , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B)
-
-               const first = ()=>A, second = ()=>B
-                   , spy = sinon.spy(function(_, __, supplied){
-                              assert(supplied[A_key] === A)
-                              assert(supplied[B_key] === undefined)
-                           })
-
-               var walk = new Walker( $() )
-               walk(root, first, spy, second)
-
-               assert(spy.called)
-            })
-
-            they("do *not* include nodes supplied by previous walk-steps", function(){
-               const root = $.new(), root_key = $.key(root)
-                   , foo  = $.new(), foo_key  = $.key(foo)
-
-                   , bar = $.new(),        baz = $.new()
-                   , bar_key = $.key(bar), baz_key = $.key(baz)
-
-               const supplier = sinon.stub()
-                     supplier.withArgs(root).returns(foo)
-                     supplier.withArgs(foo).returns([bar, baz])
-
-               const spy = sinon.spy(function(node, _, supplied){
-                     if (node === foo) {
-                        assert(supplied[bar_key] === bar)
-                        assert(supplied[baz_key] === baz)
-                        assert(supplied[root_key] === undefined)
-                     }
-                  })
-
-               var walk = new Walker( $() )
-               walk(root, supplier, spy)
-
-               assert(spy.calledWith(root))
-               assert(spy.calledWith(foo))
-               assert(spy.calledWith(bar))
-               assert(spy.calledWith(baz))
-            })
-
-            they("receive a set of all nodes seen thus far", function(){
-               const root = $.new(), root_key = $.key(root)
-                   , foo  = $.new()       , bar = $.new(),        baz = $.new()
-                   , foo_key  = $.key(foo), bar_key = $.key(bar), baz_key = $.key(baz)
-
-               const supplier = sinon.stub()
-                     supplier.withArgs(root).returns(foo)
-                     supplier.withArgs(foo).returns(bar)
-                     supplier.withArgs(bar).returns(baz)
-
-               const spy = sinon.spy(function(node, _, __, seen){
-                     if (node === bar) {
-                        assert(seen[root_key] && seen[root_key].node === root)
-                        assert(seen[foo_key]  && seen[foo_key] .node === foo)
-                        assert(seen[bar_key]  && seen[bar_key] .node === bar)
-                        assert(seen[baz_key] === undefined)
-                     }
-                  })
-
-               var walk = new Walker( $() )
-               walk(root, supplier, spy)
-
-               assert(spy.calledWith(bar))
-            })
-
-            they("see rejected nodes in the `seen` argument", function(){
-               const root = $.new(), root_key = $.key(root)
-                   , foo  = $.new()       , bar = $.new()
-                   , foo_key  = $.key(foo), bar_key = $.key(bar)
-
-               const supplier = sinon.stub()
-                     supplier.withArgs(root).returns([foo, bar])
-
-               const filter = sinon.stub()
-                     filter.returns(true)
-                     filter.withArgs(foo).returns(false)
-
-               const spy = sinon.spy(function(node, _, __, seen){
-                     if (node === bar) {
-                        assert(seen[root_key] && seen[root_key].node === root)
-                        assert(seen[foo_key]  && seen[foo_key] .node === foo)
-                        assert(seen[bar_key]  && seen[bar_key] .node === bar)
-                     }
-                  })
-
-               var walk = new Walker( $() )
-               walk(root, supplier, filter, spy)
-
-               assert(spy.neverCalledWith(foo))
-               assert(spy.calledWith(bar))
-            })
-
             they("receive callbacks passed to the walk() call as the final arugment", function(){
                const root = $.new(); $.key(root)
 
@@ -422,7 +325,7 @@ describe("giraphe", function(){
                    , second = new Function()
                    , third = new Function()
 
-               const spy = sinon.spy(function(node, _, __, ___, allbacks){
+               const spy = sinon.spy(function(node, _, allbacks){
                   assert(allbacks.indexOf(spy) === 0)
                   assert(allbacks.indexOf(first) === 1)
                   assert(allbacks.indexOf(second) === 2)
