@@ -71,7 +71,9 @@ const constructWalkFunction = function constructWalkFunction(options){          
 
       // If method-invoked, `root.walk(...)`
       if (typeof this !== 'undefined' && this !== GLOBAL) {
-         callbacks.unshift(root)
+         if (null != root)
+            callbacks.unshift(root)
+
          root = this
       }
 

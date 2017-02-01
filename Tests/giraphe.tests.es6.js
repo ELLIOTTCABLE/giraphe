@@ -278,6 +278,7 @@ describe("giraphe", function(){
                walk = walk(function(){})
 
                assert.doesNotThrow(()=> walk(root) )
+               assert.doesNotThrow(()=> walk.call(root) )
          })
 
          it("can be partially-applied with callbacks", function(){
