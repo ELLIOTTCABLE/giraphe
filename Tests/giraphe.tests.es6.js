@@ -248,16 +248,16 @@ describe("giraphe", function(){
                 , root_to_foo = $.edge_to(foo), root_to_bar = $.edge_to(bar)
                 , bar_to_foo = $.edge_to(foo)
 
-            const first = node => { if (node === root) return [root_to_foo, root_to_bar] }
-                , second = node => { if (node === bar) return bar_to_foo }
-                , filter = edge => { if (edge === root_to_foo) return false }
+            const first  = function(){ if (this === root) return [root_to_foo, root_to_bar] }
+                , second = function(){ if (this === bar) return bar_to_foo }
+                , filter = function(edge){ if (edge === root_to_foo) return false }
 
             const spy = sinon.spy()
 
             var walk = new Walker( $() )
             var rv = walk(root, first, second, filter, spy)
 
-            assert(spy.neverCalledWith(root_to_foo))
+            assert(spy.neverCalledWith(sinon.match.same(root_to_foo)))
             assert(spy.calledOn(foo))
             assert(spy.calledWith(bar_to_foo))
 
