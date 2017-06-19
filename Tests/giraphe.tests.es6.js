@@ -2,7 +2,7 @@ import Debug from 'debug'
 import _     from 'lodash'
 const  debug = Debug('giraphe:tests')
 
-import assert from 'power-assert'
+import assert from 'assert'
 import sinon, { match } from 'sinon'
 const __ = match.any
 

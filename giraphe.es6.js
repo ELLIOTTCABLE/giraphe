@@ -1,6 +1,6 @@
 import Debug from 'debug'
 const debug = Debug('giraphe')
-import assert from 'power-assert'
+import assert from 'assert'
 
 import _ from 'lodash'
 
