@@ -2,6 +2,10 @@ coverage:
    range: 50..90
    precision: 0
 
+   notify:
+      irc:
+      #  This is NYI, unfortunately. Waiting on codecov/support#60.
+
 parsers:
    javascript:
       enable_partials: yes
