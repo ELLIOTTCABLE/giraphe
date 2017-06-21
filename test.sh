@@ -16,8 +16,8 @@ source_dir="$npm_package_directories_src"
 unit_dir="$npm_package_directories_test"
 coverage_dir="$npm_package_directories_coverage"
 
-mocha_ui="$npm_package_config_mocha_ui"
-mocha_reporter="$npm_package_config_mocha_reporter"
+mocha_ui="$npm_package_mocha_ui"
+mocha_reporter="$npm_package_mocha_reporter"
 
 # FIXME: This should support *excluded* modules with a minus, as per `node-debug`:
 #        https://github.com/visionmedia/debug

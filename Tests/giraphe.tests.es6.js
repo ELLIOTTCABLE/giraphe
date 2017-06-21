@@ -23,133 +23,343 @@ let permutations = generatePermutations()
 //    `permutables` (i.e. something like `{ class: <blah>, key: 'id', ... }`),
 // 3. but when called with a `String`, i.e. `$("Hello")`, it suffixes that string with a description
 // 2. and exposes all of the helpers from the above permutations, i.e. `$.new()` or `$.key()`.
-describe("giraphe", function(){
-   describe("~ The Walker constructor", function(){
+describe("The Walker() constructor", function(){
 
-      it("exists", function(){
-         assert.ok(Walker)
-         assert(typeof Walker === 'function')
+   it("exists", function(){
+      assert.ok(Walker)
+      assert(typeof Walker === 'function')
+   })
+
+   it("accepts a node-class", function(){
+      class Node {}
+      assert.doesNotThrow(function(){ new Walker(Node, 'id') })
+   })
+
+   it("accepts an options-object", function(){
+      class Node {}
+      assert.doesNotThrow(function(){ new Walker({ class: Node, key: 'id' }) })
+   })
+
+   it("takes a predicate as an alternative to a node-class", function(){
+      assert.doesNotThrow(function(){ new Walker({ predicate: new Function, key: 'id' }) })
+   })
+
+   it("accepts a keyer-function", function(){
+      class Node {}
+      assert.doesNotThrow(function(){ new Walker({ class: Node, keyer: function(){} }) })
+   })
+
+   it("does not currently support unkeyed iteration", function(){
+      class Node {}
+      assert.throws(function(){ new Walker({ class: Node }) })
+   })
+
+   it("throws if given neither a predicate nor a node-class", function(){
+      assert.throws(function(){ new Walker({ key: 'blah' }) })
+      assert.throws(function(){ new Walker(   ) })
+   })
+
+
+}) // ~ The Walker() constructor
+
+permuteTests(function($){
+   debug($("Adding permuted tests"))
+
+   describe($("A walk() function"), function(){
+
+      it("instantiates", function(){
+         var walk = new Walker( $() )
+         assert(typeof walk === 'function')
       })
 
-      it("accepts a node-class", function(){
-         class Node {}
-         assert.doesNotThrow(function(){ new Walker(Node, 'id') })
+      it("fails if given no callbacks", function(){
+         const root = $.new(); $.key(root)
+         var walk = new Walker( $() )
+
+         assert.throws(()=> walk(root) )
       })
 
-      it("accepts an options-object", function(){
-         class Node {}
-         assert.doesNotThrow(function(){ new Walker({ class: Node, key: 'id' }) })
+    //if (!$.has_map)
+      it("returns an object representing a mapping", function(){
+         const root = $.new(); $.key(root)
+         var walk = new Walker( $() )
+
+         var result = walk(root, new Function)
+         assert(null != result && typeof result === 'object')
       })
 
-      it("takes a predicate as an alternative to a node-class", function(){
-         assert.doesNotThrow(function(){ new Walker({ predicate: new Function, key: 'id' }) })
+      if ($.has_class)
+      it("returns a mapping of the given class", function(){
+         const root = $.new(); $.key(root)
+         var walk = new Walker( $() )
+
+         var result = walk(root, new Function)
+         assert(null != result && typeof result === 'object')
       })
 
-      it("accepts a keyer-function", function(){
-         class Node {}
-         assert.doesNotThrow(function(){ new Walker({ class: Node, keyer: function(){} }) })
+      it("collects the root node, if it's not rejected", function(){
+         const root = $.new(), key = $.key(root)
+         var walk = new Walker( $() )
+
+         var result = walk(root, function(){ return undefined })
+         assert(result[key] === root)
       })
 
-      it("does not currently support unkeyed iteration", function(){
-         class Node {}
-         assert.throws(function(){ new Walker({ class: Node }) })
+      it("collects nodes returned by a callback (‘a supplyback’)", function(){
+         const A = $.new(), B = $.new(), A_key = $.key(A), B_key = $.key(B)
+         const supplyback = ()=>B
+         var walk = new Walker( $() )
+
+         var result = walk(A, supplyback)
+         assert(result[A_key] === A)
+         assert(result[B_key] === B)
       })
 
-      it("throws if given neither a predicate nor a node-class", function(){
-         assert.throws(function(){ new Walker({ key: 'blah' }) })
-         assert.throws(function(){ new Walker(   ) })
+      it("returns the collected nodes", function(){
+         const root = $.new(),         A = $.new(),      B = $.new()
+             , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B)
+
+         const first = ()=> A
+             , second = ()=> B
+
+         var walk = new Walker( $() )
+         var rv = walk(root, first, second)
+
+         assert.ok(rv)
+         assert(Object.keys(rv).length === 3)
+         assert(rv[root_key] === root)
+         assert(rv[A_key] === A)
+         assert(rv[B_key] === B)
       })
 
+      it("does not return rejected nodes", function(){
+         const root = $.new(),         A = $.new(),      B = $.new()
+             , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B)
 
-   }) // ~ The Walker constructor
+         const supplier = node => [A, B]
+             , filter = node => { if (node === A) return false }
 
-   permuteTests(function($){
-      debug($("Adding permuted tests"))
+         var walk = new Walker( $() )
+         var rv = walk(root, supplier, filter)
 
-      describe($("~ a walk function"), function(){
+         assert(rv[root_key] === root)
+         assert(rv[B_key] === B)
 
-         it("instantiates", function(){
-            var walk = new Walker( $() )
-            assert(typeof walk === 'function')
-         })
+         assert(!(A_key in rv))
+      })
 
-         it("fails if given no callbacks", function(){
+      it("is capable of returning an empty set if all nodes are rejected", function(){
+         const root = $.new(), root_key = $.key(root)
+
+         const filter = ()=>{ return false }
+
+         var walk = new Walker( $() )
+         var rv = walk(root, filter)
+
+         assert(Object.keys(rv).length === 0)
+      })
+
+      it("can be short-circuited by returning the abortIteration sentinel", function(){
+         const root = $.new(),         A = $.new(),      B = $.new()
+             , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B)
+
+         const supplier = node => [A, B]
+             , aborter = node => { if (node === A) return Walker.abortIteration }
+
+         var walk = new Walker( $() )
+         var rv = walk(root, supplier, aborter)
+
+         assert(rv === false)
+      })
+
+      it("will re-discover a previously-rejected node via a different path",
+      function(){
+         const root = $.new(), root_key = $.key(root)
+             , foo  = $.new()       , bar = $.new()
+             , foo_key  = $.key(foo), bar_key = $.key(bar)
+
+         const first = node => { if (node === root) return [foo, bar] }
+             , second = node => { if (node === bar) return foo }
+             , filter = (node, parent) => {
+                  if (parent === root && node === foo) return false }
+
+         const spy = sinon.spy()
+
+         var walk = new Walker( $() )
+         var rv = walk(root, first, second, filter, spy)
+
+         assert(spy.neverCalledWith(foo, root))
+         assert(spy.calledWith(foo, bar))
+      })
+
+      it("does not throw when partially-applied", function(){
+         var walk = new Walker( $() )
+
+         assert.doesNotThrow(()=> walk(function(){}) )
+      })
+
+      it("can be invoked without an additional immediate callback once partially-applied",
+         function(){
             const root = $.new(); $.key(root)
             var walk = new Walker( $() )
 
-            assert.throws(()=> walk(root) )
-         })
+            walk = walk(function(){})
 
-       //if (!$.has_map)
-         it("returns an object representing a mapping", function(){
+            assert.doesNotThrow(()=> walk(root) )
+      })
+
+      it("can be partially-applied with callbacks", function(){
+         const root = $.new(); $.key(root)
+         const spy = sinon.spy()
+         var walk = new Walker( $() )
+
+         walk = walk(spy)
+         assert(!spy.called)
+         assert(typeof walk === 'function')
+
+         walk(root)
+         assert(spy.called)
+      })
+
+      it("partially-applies only to *further copies* of itself", function(){
+         const root = $.new(); $.key(root)
+         const spy = sinon.spy()
+             , original_walk = new Walker( $() )
+
+         const new_walk = original_walk(spy)
+
+         original_walk(root, function(){})
+         assert(!spy.called)
+
+         new_walk(root)
+         assert(spy.called)
+      })
+
+      it("applies partially-applied callbacks in the order they are provided", function(){
+         const root = $.new(); $.key(root)
+         const first  = sinon.spy(()=> assert(!second.called))
+             , second = sinon.spy(()=> assert(!third.called))
+             , third  = sinon.spy()
+         var walk = new Walker( $() )
+
+         walk = walk(first)
+         assert(!first.called)
+         assert(typeof walk === 'function')
+         walk = walk(second)
+         assert(!first.called)
+         assert(!second.called)
+         assert(typeof walk === 'function')
+
+         walk(root, third)
+         assert(first.called)
+         assert(second.called)
+         assert(third.called)
+      })
+
+      // TODO: Need an integration-level test of partial-application with the *actual
+      //       supplyback/filterback functionality*.
+
+
+      describe("~ callbacks", function(){ const they = it
+         they("get called on the passed initial node", function(){
             const root = $.new(); $.key(root)
+            const cb = sinon.spy()
             var walk = new Walker( $() )
 
-            var result = walk(root, new Function)
-            assert(null != result && typeof result === 'object')
+            walk(root, cb)
+            assert(cb.calledOnce)
          })
 
-         if ($.has_class)
-         it("returns a mapping of the given class", function(){
+         they("are severally called", function(){
             const root = $.new(); $.key(root)
+            const first = sinon.spy(), second = sinon.spy()
             var walk = new Walker( $() )
 
-            var result = walk(root, new Function)
-            assert(null != result && typeof result === 'object')
+            walk(root, first, second)
+            assert(first .calledOnce)
+            assert(second.calledOnce)
          })
 
-         it("collects the root node, if it's not rejected", function(){
-            const root = $.new(), key = $.key(root)
+         they("are invoked with the current node as `this`", function(){
+            const root = $.new(); $.key(root)
+            const cb = sinon.spy()
             var walk = new Walker( $() )
 
-            var result = walk(root, function(){ return undefined })
-            assert(result[key] === root)
+            walk(root, cb)
+            assert(cb.calledOn(root))
          })
 
-         it("collects nodes returned by a callback (‘a supplyback’)", function(){
-            const A = $.new(), B = $.new(), A_key = $.key(A), B_key = $.key(B)
-            const supplyback = ()=>B
+         they("also receive the current node as the first argument", function(){
+            const root = $.new(); $.key(root)
+            const cb = sinon.spy()
             var walk = new Walker( $() )
 
-            var result = walk(A, supplyback)
-            assert(result[A_key] === A)
-            assert(result[B_key] === B)
+            walk(root, cb)
+            assert(cb.calledWith(root))
          })
 
-         it("returns the collected nodes", function(){
-            const root = $.new(),         A = $.new(),      B = $.new()
-                , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B)
+         they("receive `null` instead of a ‘parent’ when processing the root node", function(){
+            const root = $.new(); $.key(root)
+            const cb = sinon.spy()
+            var walk = new Walker( $() )
 
-            const first = ()=> A
-                , second = ()=> B
+            walk(root, cb)
+            assert(cb.calledWith(__, null))
+         })
+
+         they("receive the parent (discovered-through) node as the second argument", function(){
+            const parent = $.new(); $.key(parent)
+            const child  = $.new(); $.key(child)
+            const supplier = ()=>child, spy = sinon.spy()
+            var walk = new Walker( $() )
+
+            walk(parent, supplier, spy)
+            assert(spy.calledWith(__, parent))
+         })
+
+         they("receive callbacks passed to the walk() call as the final arugment", function(){
+            const root = $.new(); $.key(root)
+
+            const first = new Function()
+                , second = new Function()
+                , third = new Function()
+
+            const spy = sinon.spy(function(node, _, allbacks){
+               assert(allbacks.indexOf(spy) === 0)
+               assert(allbacks.indexOf(first) === 1)
+               assert(allbacks.indexOf(second) === 2)
+               assert(allbacks.indexOf(third) === 3)
+            })
 
             var walk = new Walker( $() )
-            var rv = walk(root, first, second)
+            walk(root, spy, first, second, third)
 
-            assert.ok(rv)
-            assert(Object.keys(rv).length === 3)
+            assert(spy.called)
+         })
+
+         they("may pass the current node by returning `true`", function(){
+            const root = $.new(), root_key = $.key(root)
+
+            const filter = ()=>{ return true }
+
+            var walk = new Walker( $() )
+            var rv = walk(root, filter)
+
             assert(rv[root_key] === root)
-            assert(rv[A_key] === A)
-            assert(rv[B_key] === B)
          })
 
-         it("does not return rejected nodes", function(){
-            const root = $.new(),         A = $.new(),      B = $.new()
-                , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B)
+         they("may pass the current node by returning nothing", function(){
+            const root = $.new(), root_key = $.key(root)
 
-            const supplier = node => [A, B]
-                , filter = node => { if (node === A) return false }
+            const filter = ()=>{}
 
             var walk = new Walker( $() )
-            var rv = walk(root, supplier, filter)
+            var rv = walk(root, filter)
 
             assert(rv[root_key] === root)
-            assert(rv[B_key] === B)
-
-            assert(!(A_key in rv))
          })
 
-         it("is capable of returning an empty set if all nodes are rejected", function(){
+         they("may reject the current node by explicitly returning `false`", function(){
             const root = $.new(), root_key = $.key(root)
 
             const filter = ()=>{ return false }
@@ -157,306 +367,93 @@ describe("giraphe", function(){
             var walk = new Walker( $() )
             var rv = walk(root, filter)
 
-            assert(Object.keys(rv).length === 0)
+            assert(!(root_key in rv))
          })
 
-         it("can be short-circuited by returning the abortIteration sentinel", function(){
-            const root = $.new(),         A = $.new(),      B = $.new()
-                , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B)
+         they("may collect an individual node by returning it directly", function(){
+            const root = $.new(), root_key = $.key(root)
+                , other = $.new(), other_key = $.key(other)
 
-            const supplier = node => [A, B]
-                , aborter = node => { if (node === A) return Walker.abortIteration }
+            const supplier = ()=>{ return other }
 
             var walk = new Walker( $() )
-            var rv = walk(root, supplier, aborter)
+            var rv = walk(root, supplier)
 
-            assert(rv === false)
+            assert(rv[other_key] === other)
          })
 
-         it("will re-discover a previously-rejected node via a different path",
+         they("may collect nodes by returning them in an Array", function(){
+            const root = $.new(),         A = $.new(),      B = $.new(),      C = $.new()
+                , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B), C_key = $.key(C)
+
+            const supplier = ()=>{ return [A, B, C] }
+
+            var walk = new Walker( $() )
+            var rv = walk(root, supplier)
+
+            assert(rv[A_key] === A)
+            assert(rv[B_key] === B)
+            assert(rv[C_key] === C)
+         })
+
+         they("may collect nodes by returning them in an object-mapping", function(){
+            const root = $.new(),         A = $.new(),      B = $.new(),      C = $.new()
+                , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B), C_key = $.key(C)
+
+            const supplier = ()=>{ return {
+               [A_key]: A
+             , [B_key]: B
+             , [C_key]: C
+            } }
+
+            var walk = new Walker( $() )
+            var rv = walk(root, supplier)
+
+            assert(rv[A_key] === A)
+            assert(rv[B_key] === B)
+            assert(rv[C_key] === C)
+         })
+
+         they("are not invoked on a walk-step if a prior filter `rejects` the current node",
          function(){
             const root = $.new(), root_key = $.key(root)
                 , foo  = $.new()       , bar = $.new()
                 , foo_key  = $.key(foo), bar_key = $.key(bar)
 
-            const first = node => { if (node === root) return [foo, bar] }
-                , second = node => { if (node === bar) return foo }
-                , filter = (node, parent) => {
-                     if (parent === root && node === foo) return false }
+            const supplier = node => [foo, bar]
+                , filter = node => { if (node === foo) return false }
 
             const spy = sinon.spy()
 
             var walk = new Walker( $() )
-            var rv = walk(root, first, second, filter, spy)
+            walk(root, supplier, filter, spy)
 
-            assert(spy.neverCalledWith(foo, root))
-            assert(spy.calledWith(foo, bar))
+            assert(spy.calledWith(bar))
+            assert(spy.neverCalledWith(foo))
          })
 
-         it("does not throw when partially-applied", function(){
-            var walk = new Walker( $() )
+         they("are not invoked at all after a walk is aborted", function(){
+            const root = $.new(), root_key = $.key(root)
+                , foo  = $.new()       , bar = $.new()
+                , foo_key  = $.key(foo), bar_key = $.key(bar)
 
-            assert.doesNotThrow(()=> walk(function(){}) )
-         })
+            const supplier = node => [foo, bar]
+                , aborter = node => { if (node === foo) return Walker.abortIteration }
 
-         it("can be invoked without an additional immediate callback once partially-applied",
-            function(){
-               const root = $.new(); $.key(root)
-               var walk = new Walker( $() )
-
-               walk = walk(function(){})
-
-               assert.doesNotThrow(()=> walk(root) )
-         })
-
-         it("can be partially-applied with callbacks", function(){
-            const root = $.new(); $.key(root)
             const spy = sinon.spy()
+
             var walk = new Walker( $() )
+            walk(root, supplier, aborter, spy)
 
-            walk = walk(spy)
-            assert(!spy.called)
-            assert(typeof walk === 'function')
-
-            walk(root)
-            assert(spy.called)
+            assert(spy.calledWith(root))
+            assert(spy.neverCalledWith(foo))
+            assert(spy.neverCalledWith(bar))
          })
 
-         it("partially-applies only to *further copies* of itself", function(){
-            const root = $.new(); $.key(root)
-            const spy = sinon.spy()
-                , original_walk = new Walker( $() )
+      }) // ~ callbacks
 
-            const new_walk = original_walk(spy)
-
-            original_walk(root, function(){})
-            assert(!spy.called)
-
-            new_walk(root)
-            assert(spy.called)
-         })
-
-         it("applies partially-applied callbacks in the order they are provided", function(){
-            const root = $.new(); $.key(root)
-            const first  = sinon.spy(()=> assert(!second.called))
-                , second = sinon.spy(()=> assert(!third.called))
-                , third  = sinon.spy()
-            var walk = new Walker( $() )
-
-            walk = walk(first)
-            assert(!first.called)
-            assert(typeof walk === 'function')
-            walk = walk(second)
-            assert(!first.called)
-            assert(!second.called)
-            assert(typeof walk === 'function')
-
-            walk(root, third)
-            assert(first.called)
-            assert(second.called)
-            assert(third.called)
-         })
-
-         // TODO: Need an integration-level test of partial-application with the *actual
-         //       supplyback/filterback functionality*.
-
-
-         describe("~ callbacks", function(){ const they = it
-            they("get called on the passed initial node", function(){
-               const root = $.new(); $.key(root)
-               const cb = sinon.spy()
-               var walk = new Walker( $() )
-
-               walk(root, cb)
-               assert(cb.calledOnce)
-            })
-
-            they("are severally called", function(){
-               const root = $.new(); $.key(root)
-               const first = sinon.spy(), second = sinon.spy()
-               var walk = new Walker( $() )
-
-               walk(root, first, second)
-               assert(first .calledOnce)
-               assert(second.calledOnce)
-            })
-
-            they("are invoked with the current node as `this`", function(){
-               const root = $.new(); $.key(root)
-               const cb = sinon.spy()
-               var walk = new Walker( $() )
-
-               walk(root, cb)
-               assert(cb.calledOn(root))
-            })
-
-            they("also receive the current node as the first argument", function(){
-               const root = $.new(); $.key(root)
-               const cb = sinon.spy()
-               var walk = new Walker( $() )
-
-               walk(root, cb)
-               assert(cb.calledWith(root))
-            })
-
-            they("receive `null` instead of a ‘parent’ when processing the root node", function(){
-               const root = $.new(); $.key(root)
-               const cb = sinon.spy()
-               var walk = new Walker( $() )
-
-               walk(root, cb)
-               assert(cb.calledWith(__, null))
-            })
-
-            they("receive the parent (discovered-through) node as the second argument", function(){
-               const parent = $.new(); $.key(parent)
-               const child  = $.new(); $.key(child)
-               const supplier = ()=>child, spy = sinon.spy()
-               var walk = new Walker( $() )
-
-               walk(parent, supplier, spy)
-               assert(spy.calledWith(__, parent))
-            })
-
-            they("receive callbacks passed to the walk() call as the final arugment", function(){
-               const root = $.new(); $.key(root)
-
-               const first = new Function()
-                   , second = new Function()
-                   , third = new Function()
-
-               const spy = sinon.spy(function(node, _, allbacks){
-                  assert(allbacks.indexOf(spy) === 0)
-                  assert(allbacks.indexOf(first) === 1)
-                  assert(allbacks.indexOf(second) === 2)
-                  assert(allbacks.indexOf(third) === 3)
-               })
-
-               var walk = new Walker( $() )
-               walk(root, spy, first, second, third)
-
-               assert(spy.called)
-            })
-
-            they("may pass the current node by returning `true`", function(){
-               const root = $.new(), root_key = $.key(root)
-
-               const filter = ()=>{ return true }
-
-               var walk = new Walker( $() )
-               var rv = walk(root, filter)
-
-               assert(rv[root_key] === root)
-            })
-
-            they("may pass the current node by returning nothing", function(){
-               const root = $.new(), root_key = $.key(root)
-
-               const filter = ()=>{}
-
-               var walk = new Walker( $() )
-               var rv = walk(root, filter)
-
-               assert(rv[root_key] === root)
-            })
-
-            they("may reject the current node by explicitly returning `false`", function(){
-               const root = $.new(), root_key = $.key(root)
-
-               const filter = ()=>{ return false }
-
-               var walk = new Walker( $() )
-               var rv = walk(root, filter)
-
-               assert(!(root_key in rv))
-            })
-
-            they("may collect an individual node by returning it directly", function(){
-               const root = $.new(), root_key = $.key(root)
-                   , other = $.new(), other_key = $.key(other)
-
-               const supplier = ()=>{ return other }
-
-               var walk = new Walker( $() )
-               var rv = walk(root, supplier)
-
-               assert(rv[other_key] === other)
-            })
-
-            they("may collect nodes by returning them in an Array", function(){
-               const root = $.new(),         A = $.new(),      B = $.new(),      C = $.new()
-                   , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B), C_key = $.key(C)
-
-               const supplier = ()=>{ return [A, B, C] }
-
-               var walk = new Walker( $() )
-               var rv = walk(root, supplier)
-
-               assert(rv[A_key] === A)
-               assert(rv[B_key] === B)
-               assert(rv[C_key] === C)
-            })
-
-            they("may collect nodes by returning them in an object-mapping", function(){
-               const root = $.new(),         A = $.new(),      B = $.new(),      C = $.new()
-                   , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B), C_key = $.key(C)
-
-               const supplier = ()=>{ return {
-                  [A_key]: A
-                , [B_key]: B
-                , [C_key]: C
-               } }
-
-               var walk = new Walker( $() )
-               var rv = walk(root, supplier)
-
-               assert(rv[A_key] === A)
-               assert(rv[B_key] === B)
-               assert(rv[C_key] === C)
-            })
-
-            they("are not invoked on a walk-step if a prior filter `rejects` the current node",
-            function(){
-               const root = $.new(), root_key = $.key(root)
-                   , foo  = $.new()       , bar = $.new()
-                   , foo_key  = $.key(foo), bar_key = $.key(bar)
-
-               const supplier = node => [foo, bar]
-                   , filter = node => { if (node === foo) return false }
-
-               const spy = sinon.spy()
-
-               var walk = new Walker( $() )
-               walk(root, supplier, filter, spy)
-
-               assert(spy.calledWith(bar))
-               assert(spy.neverCalledWith(foo))
-            })
-
-            they("are not invoked at all after a walk is aborted", function(){
-               const root = $.new(), root_key = $.key(root)
-                   , foo  = $.new()       , bar = $.new()
-                   , foo_key  = $.key(foo), bar_key = $.key(bar)
-
-               const supplier = node => [foo, bar]
-                   , aborter = node => { if (node === foo) return Walker.abortIteration }
-
-               const spy = sinon.spy()
-
-               var walk = new Walker( $() )
-               walk(root, supplier, aborter, spy)
-
-               assert(spy.calledWith(root))
-               assert(spy.neverCalledWith(foo))
-               assert(spy.neverCalledWith(bar))
-            })
-
-         }) // ~ callbacks
-
-      }) // ~ a walk function
-   }) // permuteTests
-
-}) // giraphe
+   }) // ~ A Walk() function
+}) // permuteTests
 
 
 
