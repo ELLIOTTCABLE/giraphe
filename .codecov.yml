@@ -1,0 +1,7 @@
+coverage:
+   range: 50..90
+   precision: 0
+
+parsers:
+   javascript:
+      enable_partials: yes
