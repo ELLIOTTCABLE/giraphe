@@ -54,10 +54,9 @@
     , "sourceMap"              : false
     , "instrument"             : false
 
-    , "reporter"               : ["html", "text-summary"]
+    , "reporter"               : "none"
     , "report-dir"             : "./Docs/Coverage"
 
-    , "check-coverage"         : true
     , "statements"             : 90
     , "branches"               : 90
    }
@@ -91,6 +90,7 @@
     , "mocha"                  : "^3.4.2"
     , "sinon"                  : "^2.3.5"
     , "nyc"                    : "^11.0.2"
+    , "codecov"                : "^2.2.0"
     , "mocha-fivemat-reporter" : "^0.0.9"
    }
 }

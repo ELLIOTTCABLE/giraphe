@@ -15,7 +15,8 @@ node_js:
  - "0.11"
 
 env:
- - CI=yes
+   global:
+    - BABEL_ENV=coverage
 
 
 before_install:
