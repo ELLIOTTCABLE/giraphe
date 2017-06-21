@@ -6,7 +6,7 @@ import assert from 'assert'
 import sinon, { match } from 'sinon'
 const __ = match.any
 
-import { Walker } from '../giraphe.es6.js'
+import { Walker } from '../'
 
 
 debugger

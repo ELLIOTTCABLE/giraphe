@@ -104,4 +104,6 @@ if [ -n "${WATCH##[NFnf]*}" ]; then
       $CHOKIDAR_FLAGS -c "$0 $(argq "$@")"
 fi
 
+go npm --silent run-script build
+
 mochaify "$unit_dir"/"*.tests.*js" "$@"

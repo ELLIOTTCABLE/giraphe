@@ -47,14 +47,19 @@
    }
 
  , "nyc": {
-      "all"                    : true
-    , "include"                : ["giraphe.es6.js"]
+      "include"                : ["giraphe.es6.js"]
     , "extension"              : [".es6.js"]
 
     , "require"                : ["babel-register"]
-
-    , "sourceMap"              : true
+    , "sourceMap"              : false
     , "instrument"             : false
+
+    , "reporter"               : ["html", "text-summary"]
+    , "report-dir"             : "./Docs/Coverage"
+
+    , "check-coverage"         : true
+    , "statements"             : 90
+    , "branches"               : 90
    }
 
  , "mocha": {
@@ -84,7 +89,7 @@
     , "babel-preset-power-assert"                      : "^1.0.0"
 
     , "mocha"                  : "^3.4.2"
-    , "sinon"                  : "^2.3.4"
-    , "nyc"                    : "^10.1.2"
+    , "sinon"                  : "^2.3.5"
+    , "nyc"                    : "^11.0.2"
    }
 }
