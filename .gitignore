@@ -1,5 +1,5 @@
 node_modules
-*.js*
+*.js
 !*.es6.js*
 
 Docs/Coverage/*
