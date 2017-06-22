@@ -40,6 +40,9 @@ if [ -n "${CI##[NFnf]*}" ]; then
    DEBUGGER='no'
    WATCH='no'
    COVERAGE='yes'
+
+   pute "Installing 'codecov' package"
+   npm install 'codecov@^2.2.0'
 fi
 
 if [ -n "${DEBUGGER##[NFnf]*}" ]; then

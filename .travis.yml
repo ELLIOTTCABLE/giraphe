@@ -20,7 +20,7 @@ env:
 
 
 before_install:
- - case "$(npm --version)" in 1.*) npm install -g npm ;; esac
+ - case "$(npm --version)" in 1.*) npm install -g 'npm@^2.15.1' ;; esac
 
 before_script:
  - npm run-script build
