@@ -1,7 +1,7 @@
 {  "author"     : "ELLIOTTCABLE (http://ell.io/tt)"
 
  , "name"       : "giraphe"
- , "version"    : "1.1.1"
+ , "version"    : "2.0.0"
  , "license"    : "ISC"
 
  , "description": "A exceedingly-generic graph walking API."
