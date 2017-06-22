@@ -6,4 +6,6 @@ test.sh
 
 Docs/Coverage/*
 .nyc_output/*
+.npmignore
+.travis.yml
 **/tags
