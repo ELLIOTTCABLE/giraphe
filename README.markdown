@@ -280,7 +280,7 @@ const walk = new Walker({ key: 'id', class: MyNode })
 
 MyNode.prototype.walk = walk
 MyNode.prototype.children = function(){ return this._children }
-MyNode.prototype.descendants = walk(node => node._children())
+MyNode.prototype.descendants = walk(node => node._children() )
 ```
 
 

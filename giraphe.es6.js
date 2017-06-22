@@ -134,8 +134,9 @@ function walk(opts, path, via, cachebacks, runbacks, allbacks, SEEN){           
 
    if (debug.enabled) {
       const path_bits = path.slice().reverse().map(bit =>
-         null != opts.keyer ? opts.keyer.call(bit, bit) : bit[opts.key])
-      debug( 'walk(): ', path_bits.join('→') )                                                   }
+         null != opts.inspector ? opts.inspector.call(bit, bit)
+       : null != opts.keyer ? opts.keyer.call(bit, bit) : bit[opts.key] )
+      debug( 'walk():', path_bits.join(' → ') )                                                  }
 
 
    const DISCOVERED = Object.create(null)
