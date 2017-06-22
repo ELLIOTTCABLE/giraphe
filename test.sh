@@ -41,30 +41,9 @@ if [ -n "${CI##[NFnf]*}" ]; then
    WATCH='no'
    export PERMUTATE='yes'
 
-   node_version="$(node --version)"
-   case "$node_version" in
-      v0.*)
-         pute "Node.js $node_version ≤ v4. Not instrumenting for coverage."
-         old_node=yes
-         COVERAGE='no'                                                        ;;
-   esac
-
    if [ -n "${CI_PREP##[NFnf]*}" ]; then
-      if [ -n "$old_node" ]; then
-         pute "Old Node: Switching to latest stable version to transpile."
-
-         pute "Old Node: Loading NVM."
-         source "${NVM_DIR:-$HOME/.nvm}/nvm.sh"
-         nvm use stable
-      fi
-
       pute "Building."
       npm run-script build
-
-      if [ -n "$old_node" ]; then
-         pute "Old Node: Returning to Node.js $node_version."
-         nvm use "$node_version"
-      fi
 
       if [ -n "${COVERAGE##[NFnf]*}" ]; then
          pute "Installing 'codecov' package."
