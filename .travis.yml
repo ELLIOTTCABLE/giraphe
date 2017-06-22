@@ -23,7 +23,7 @@ before_install:
  - case "$(npm --version)" in 1.*) npm install -g 'npm@^2.15.1' ;; esac
 
 before_script:
- - npm run-script build
+ - CI_PREP=yes npm run-script test
 script:
  - npm run-script test
 

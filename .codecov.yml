@@ -3,8 +3,9 @@ coverage:
    precision: 0
 
    notify:
-      irc:
-      #  This is NYI, unfortunately. Waiting on codecov/support#60.
+      irc:  # Unfortunately this appears to be NYI. Waiting on codecov/support#60.
+         default:
+            server: "chat.freenode.net"
 
 parsers:
    javascript:
