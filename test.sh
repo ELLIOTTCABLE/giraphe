@@ -43,7 +43,7 @@ if [ -n "${CI##[NFnf]*}" ]; then
 
    if [ -n "${CI_PREP##[NFnf]*}" ]; then
       pute "Building."
-      npm run-script build
+      npm run-script prepare
 
       if [ -n "${COVERAGE##[NFnf]*}" ]; then
          pute "Installing 'codecov' package."
@@ -142,7 +142,7 @@ fi
 
 if [ -z "$ci" ]; then
    puts ">> Rebuilding ..."
-   go npm --silent run-script build
+   go npm --silent run-script prepare
 fi
 
 [ -z "$ci" ] && \
