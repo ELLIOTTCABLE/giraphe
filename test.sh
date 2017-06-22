@@ -39,10 +39,40 @@ if [ -n "${CI##[NFnf]*}" ]; then
    DEBUG_SCRIPTS=yes
    DEBUGGER='no'
    WATCH='no'
-   COVERAGE='yes'
+   export PERMUTATE='yes'
 
-   pute "Installing 'codecov' package"
-   npm install 'codecov@^2.2.0'
+   node_version="$(node --version)"
+   case "$node_version" in
+      v0.*)
+         pute "Node.js $node_version ≤ v4. Not instrumenting for coverage."
+         old_node=yes
+         COVERAGE='no'                                                        ;;
+   esac
+
+   if [ -n "${CI_PREP##[NFnf]*}" ]; then
+      if [ -n "$old_node" ]; then
+         pute "Old Node: Switching to latest stable version to transpile."
+
+         pute "Old Node: Loading NVM."
+         source "${NVM_DIR:-$HOME/.nvm}/nvm.sh"
+         nvm use stable
+      fi
+
+      pute "Building."
+      npm run-script build
+
+      if [ -n "$old_node" ]; then
+         pute "Old Node: Returning to Node.js $node_version."
+         nvm use "$node_version"
+      fi
+
+      if [ -n "${COVERAGE##[NFnf]*}" ]; then
+         pute "Installing 'codecov' package."
+         npm install 'codecov@^2.2.0'
+      fi
+
+      exit 0
+   fi
 fi
 
 if [ -n "${DEBUGGER##[NFnf]*}" ]; then
@@ -63,9 +93,9 @@ fi
 
 if [ -z "$COVERAGE" ]; then
    if [ -x "./node_modules/.bin/nyc" ]; then
-      COVERAGE=yes
+      COVERAGE='yes'
    else
-      COVERAGE=no
+      COVERAGE='no'
    fi
 fi
 
