@@ -16,8 +16,8 @@ source_dir="$npm_package_directories_src"
 unit_dir="$npm_package_directories_test"
 coverage_dir="$npm_package_directories_coverage"
 
-mocha_ui="$npm_package_config_mocha_ui"
-mocha_reporter="$npm_package_config_mocha_reporter"
+mocha_ui="$npm_package_mocha_ui"
+mocha_reporter="$npm_package_mocha_reporter"
 
 # FIXME: This should support *excluded* modules with a minus, as per `node-debug`:
 #        https://github.com/visionmedia/debug
@@ -31,6 +31,28 @@ fi
 # Configuration-variable setup
 # ----------------------------
 [ -z "${SILENT##[NFnf]*}${QUIET##[NFnf]*}" ] && [ "${VERBOSE:-4}" -gt 6 ] && print_commands=yes
+
+if [ -n "${CI##[NFnf]*}" ]; then
+   pute "Detected CI environment"
+
+   ci=yes
+   DEBUG_SCRIPTS=yes
+   DEBUGGER='no'
+   WATCH='no'
+   export PERMUTATE='yes'
+
+   if [ -n "${CI_PREP##[NFnf]*}" ]; then
+      pute "Building."
+      npm run-script build
+
+      if [ -n "${COVERAGE##[NFnf]*}" ]; then
+         pute "Installing 'codecov' package."
+         npm install 'codecov@^2.2.0'
+      fi
+
+      exit 0
+   fi
+fi
 
 if [ -n "${DEBUGGER##[NFnf]*}" ]; then
    # FIXME: This should require node-debug when the *current version* of Node is old enough
@@ -48,18 +70,33 @@ if [ -n "${WATCH##[NFnf]*}" ]; then
       pute 'You must `npm install chokidar-cli` to use the $WATCH flag!' && exit 127
 fi
 
+if [ -z "$COVERAGE" ]; then
+   if [ -x "./node_modules/.bin/nyc" ]; then
+      COVERAGE='yes'
+   else
+      COVERAGE='no'
+   fi
+fi
+
 if [ -n "${COVERAGE##[NFnf]*}" ]; then
    [ ! -x "./node_modules/.bin/nyc" ] &&
       pute 'You must `npm install nyc` to use the $COVERAGE flag!' && exit 127
 
+   coverage=yes
    WATCH='no'
-   coverage=yes # Alias so I can stop tying `NFnf` :P
    export NODE_ENV='coverage'
+   export PERMUTATE='yes'
 
-   invocation_guard="nyc"
+   if [ -n "$ci" ]; then
+      invocation_guard="nyc --show-process-tree --reporter none"
+   else
+      invocation_guard="nyc --reporter none"
+   fi
 fi
 
 [ -n "$DEBUG_SCRIPTS" ] && puts \
+   "Permutating tests:     ${PERMUTATE:--}"                                   \
+   "Running on CI:         ${CI:--}"                                          \
    "Watching filesystem:   ${WATCH:--}"                                       \
    "Running debugger:      ${DEBUGGER:--}"                                    \
    "Generating coverage:   ${COVERAGE:--}"                                    \
@@ -80,13 +117,12 @@ fi
 go () { [ -n "$print_commands" ] && puts '`` '"$*" >&2 ; "$@" || exit $? ;}
 
 mochaify() {
-   [ "$coverage" != yes ] && compilers_flag="--compilers js:babel-register"
+   [ -z "$coverage" ] && compilers_flag="--compilers js:babel-register"
 
    go $invocation_guard "./node_modules/.bin/${invocation_guard:+_}mocha"     \
       ${invocation_guard:+ --no-timeouts }                                    \
       $compilers_flag --reporter "$mocha_reporter" --ui "$mocha_ui"           \
       "$@"                                                                    ;}
-#     --require mocha-clean/brief                                             \
 
 
 # Execution of tests
@@ -104,4 +140,30 @@ if [ -n "${WATCH##[NFnf]*}" ]; then
       $CHOKIDAR_FLAGS -c "$0 $(argq "$@")"
 fi
 
+if [ -z "$ci" ]; then
+   puts ">> Rebuilding ..."
+   go npm --silent run-script build
+fi
+
+[ -z "$ci" ] && \
+   puts ">> Running unit tests ..."
+
 mochaify "$unit_dir"/"*.tests.*js" "$@"
+
+if [ -n "$coverage" ]; then
+   [ -n "$DEBUG_SCRIPTS" ] && \
+      pute "Generating coverage reports"
+
+   if [ -n "$ci" ]; then
+      nyc report --reporter json
+      nyc report --reporter text
+
+      pute "Uploading to https://Codecov.io"
+      codecov --disable=gcov -f "$coverage_dir"/coverage-final.json
+   else
+      puts ">> Coverage:"
+      puts ""
+      nyc report --reporter text-summary | sed '1,2d;$d;s/^/    /'
+      nyc check-coverage
+   fi
+fi
