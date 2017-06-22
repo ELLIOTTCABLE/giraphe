@@ -9,8 +9,6 @@ const __ = match.any
 import { Walker } from '../'
 
 
-debugger
-
 // I produce tests generatively, iterating over the possible forms of invocation. (Some tests
 // are made exclusive to a particular form via a conditional, or by being left out of the
 // iteration.)
@@ -59,8 +57,33 @@ describe("The Walker() constructor", function(){
       assert.throws(function(){ new Walker(   ) })
    })
 
+   it("accepts a description of edge-structure", function(){
+      class Node {}; class Edge {}
+      assert.doesNotThrow(function(){
+         new Walker({ class: Node, key: 'id',
+                      edge: { class: Edge, extract_path: 'target' } }) })
+      assert.doesNotThrow(function(){
+         new Walker({ class: Node, key: 'id',
+                      edge: { predicate: function(){}, extract_path: 'target' } }) })
+      assert.doesNotThrow(function(){
+         new Walker({ class: Node, key: 'id',
+                      edge: { class: Edge, extractor: function(){} } }) })
+   })
 
-}) // ~ The Walker() constructor
+   it("throws if edge-structure is missing a component", function(){
+      class Node {}; class Edge {}
+      assert.throws(function(){ new Walker({ class: Node, key: 'id',
+         edge: { class: Edge } }) })
+      assert.throws(function(){ new Walker({ class: Node, key: 'id',
+         edge: { predicate: function(){} } }) })
+      assert.throws(function(){ new Walker({ class: Node, key: 'id',
+         edge: { extract_path: 'target' } }) })
+      assert.throws(function(){ new Walker({ class: Node, key: 'id',
+         edge: { extractor: function(){} } }) })
+   })
+
+
+}) // The Walker() constructor
 
 permuteTests(function($){
    debug($("Adding permuted tests"))
@@ -79,7 +102,7 @@ permuteTests(function($){
          assert.throws(()=> walk(root) )
       })
 
-    //if (!$.has_map)
+    //if (!$.testing_map)
       it("returns an object representing a mapping", function(){
          const root = $.new(); $.key(root)
          var walk = new Walker( $() )
@@ -88,13 +111,14 @@ permuteTests(function($){
          assert(null != result && typeof result === 'object')
       })
 
-      if ($.has_class)
-      it("returns a mapping of the given class", function(){
-         const root = $.new(); $.key(root)
+      if ($.testing_class)
+      it("returns a mapping of keys to the given class", function(){
+         const root = $.new(), root_key = $.key(root)
          var walk = new Walker( $() )
 
          var result = walk(root, new Function)
-         assert(null != result && typeof result === 'object')
+         assert(null != result    && typeof result === 'object')
+         assert(null != result[root_key] && result[root_key] instanceof $.Node)
       })
 
       it("collects the root node, if it's not rejected", function(){
@@ -159,6 +183,28 @@ permuteTests(function($){
          assert(Object.keys(rv).length === 0)
       })
 
+      if ($.testing_edge)
+      it ("returns collected nodes themselves, even when callbacks supply edges", function(){
+         const root = $.new(),         A = $.new(),      B = $.new()
+             , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B)
+             , root_to_A = $.edge_to(A), A_to_B = $.edge_to(B)
+
+         const cb = function(){
+            if (this === root) return root_to_A
+            if (this === A)    return A_to_B
+         }
+
+         var walk = new Walker( $() )
+         var rv = walk(root, cb)
+
+         assert.ok(rv)
+         assert(Object.keys(rv).length === 3)
+         assert(rv[root_key] === root)
+         assert(rv[A_key] === A)
+         assert(rv[B_key] === B)
+      })
+
+
       it("can be short-circuited by returning the abortIteration sentinel", function(){
          const root = $.new(),         A = $.new(),      B = $.new()
              , root_key = $.key(root), A_key = $.key(A), B_key = $.key(B)
@@ -172,8 +218,7 @@ permuteTests(function($){
          assert(rv === false)
       })
 
-      it("will re-discover a previously-rejected node via a different path",
-      function(){
+      it("will re-visit a previously-rejected node via a different path", function(){
          const root = $.new(), root_key = $.key(root)
              , foo  = $.new()       , bar = $.new()
              , foo_key  = $.key(foo), bar_key = $.key(bar)
@@ -190,6 +235,32 @@ permuteTests(function($){
 
          assert(spy.neverCalledWith(foo, root))
          assert(spy.calledWith(foo, bar))
+
+         assert(rv[foo_key] === foo)
+      })
+
+      if ($.testing_edge)
+      it ("will re-visit a previously-rejected node via a different edge", function(){
+         const root = $.new(), root_key = $.key(root)
+             , foo  = $.new()       , bar = $.new()
+             , foo_key  = $.key(foo), bar_key = $.key(bar)
+             , root_to_foo = $.edge_to(foo), root_to_bar = $.edge_to(bar)
+             , bar_to_foo = $.edge_to(foo)
+
+         const first  = function(){ if (this === root) return [root_to_foo, root_to_bar] }
+             , second = function(){ if (this === bar) return bar_to_foo }
+             , filter = function(edge){ if (edge === root_to_foo) return false }
+
+         const spy = sinon.spy()
+
+         var walk = new Walker( $() )
+         var rv = walk(root, first, second, filter, spy)
+
+         assert(spy.neverCalledWith(sinon.match.same(root_to_foo)))
+         assert(spy.calledOn(foo))
+         assert(spy.calledWith(bar_to_foo))
+
+         assert(rv[foo_key] === foo)
       })
 
       it("does not throw when partially-applied", function(){
@@ -206,6 +277,7 @@ permuteTests(function($){
             walk = walk(function(){})
 
             assert.doesNotThrow(()=> walk(root) )
+            assert.doesNotThrow(()=> walk.call(root) )
       })
 
       it("can be partially-applied with callbacks", function(){
@@ -452,44 +524,128 @@ permuteTests(function($){
 
       }) // ~ callbacks
 
-   }) // ~ A Walk() function
+   }) // A walk() function
 }) // permuteTests
 
 
 
 function generatePermutations(){
-   // FIXME: This is pending a fix to sinon#1002:
-   //        <https://github.com/sinonjs/sinon/issues/1002#issuecomment-266903866>
-   //const id = Symbol('id')
-   const id = '--this-is-an-id-i-guess-idk'
-       , Node = class {}
-   const permutables = [
-      // Matched pairs; the first element being keys to add to the constructed `options` argument,
-      // and the second being methods / keys to add to the options-constructor as context (i.e. the
-      // first sets `$().class`, the second sets `$.new()`.)
-      //
-      // The first option is the default, when ‘PERMUTATE’ isn't set.
-      [  {  desc: 'class', opts: { class: Node }
-         ,  helpers: {  has_class: true
-                     ,  new: function(){ return new Node }                                      }}
-      ,  {  desc: 'pred',  opts: { predicate: (it)=> it.isNode  }
-         ,  helpers: {  has_predicate: true
-                     ,  new: function(){ return { isNode: true } }                              }}]
+   // FIXME: This is pending a fix to [sinon#1002][1], which [looks like][2] it should land a little
+   //        later this year. For the moment, I'm using a pre-release Sinon. Yikes.
+   //
+   //        [1]: <https://github.com/sinonjs/sinon/issues/1002#issuecomment-266903866>
+   //        [2]: <https://github.com/sinonjs/sinon/issues/966#issuecomment-274249586>
+ //const id = Symbol('id')
+   const sym = '::this-is-an-id-i-guess-idk'
+       , target_sym = '::you-can-find-the-target-here?-i-guess?'
+       , Node = class {},              Edge = class {}
+       , isNode = (it => it.isNode), isEdge = (it => it.isEdge)
+       , permutables = []
 
-    , [  {  desc: 'key',   opts: { key: 'id' }
-         ,  helpers: {  has_key: true
-                     ,  key: it => it['id'] = rand()                                            }}
-      ,  {  desc: 'keyer', opts: { keyer: it => it[id] }
-         ,  helpers: {  has_keyer: true,
-                        key: it => it[id] = rand()                                              }}]
+   // Matched pairs; the first element being keys to add to the constructed `options` argument, and
+   // the second being methods / keys to add to the options-constructor as context (i.e. the first
+   // sets `$().class`, the second sets `$.new()`.)
+   //
+   // The first option is the default, when ‘PERMUTATE’ isn't set.
+   // Each option to iterate over has a `name` (printed during the evaluation of the tests), some
+   // keys in `options` to add to the options-object passed to the `Walker()` constructor, and some
+   // `helpers`-values to expose on `$` for examination or calling during tests.
+   const klass = {
+      name: 'class'
+    , options: { class: Node }
+    , helpers: {
+         testing_class: true
+       , Node: Node
+       , new: function(){ return new Node }
+      }
+   }
 
-    , [  { desc: null,    opts: {} }
-      ,  { desc: 'cache', opts: {cache: true} }                                                 ]
-   ]
+   const predicate = {
+      name: 'pred'
+    , options: { predicate: it => it.isNode  }
+    , helpers: {
+         testing_predicate: true
+       , isNode: isNode
+       , new: function(){ return { isNode: true } }
+      }
+   }
+
+   const key = {
+      name: 'key'
+    , options: { key: 'id' }
+    , helpers: {
+         testing_key: true
+       , key: it => it['id'] = rand()
+      }
+   }
+
+   const keyer = {
+      name: 'keyer'
+    , options: { keyer: it => it[sym] }
+    , helpers: {
+         testing_keyer: true
+       , key: it => it[sym] = rand()
+      }
+   }
+
+   // FIXME: Ugh, these aren't fully-permuted. w/e.
+   const edgeless = { name: 'edgeless', options: {} }
+
+   const edge_basic = {
+      name: 'edge'
+    , options: { edge: {class: Edge, extract_path: 'target'} }
+    , helpers: {
+         testing_edge: true
+       , testing_edge_class: true
+       , testing_edge_path: true
+       , Edge: Edge
+       , edge_to: node => {
+            const it = new Edge()
+            it.target = node
+            return it
+         }
+      }
+   }
+
+   const edge_predicate = {
+      name: 'edge-pred'
+    , options: { edge: {predicate: (it => it.isEdge), extract_path: 'target'} }
+    , helpers: {
+         testing_edge: true
+       , testing_edge_predicate: true
+       , testing_edge_path: true
+       , isEdge: isEdge
+       , edge_to: node => ({ isEdge: true, target: node })
+      }
+   }
+
+   const edge_extractor = {
+      name: 'edge-extractor'
+    , options: { edge: {class: Edge, extractor: it => it[target_sym] } }
+    , helpers: {
+         testing_edge: true
+       , testing_edge_class: true
+       , testing_edge_extractor: true
+       , Edge: Edge
+       , edge_to: node => {
+            const it = new Edge()
+            it[target_sym] = node
+            return it
+         }
+      }
+   }
+
+   // NYI: Caching!
+ //const cache = ...
 
    // FIXME: Hm. `key` (whether function or string) is obviously only meaningful for Object-map
    // interfaces; this will need to be tweaked not to permutate over other combinations.
-   //, [[ { something_to_do_with_sets: true } ], [ { something_to_do_with_maps: false } ]]
+ //, [[ { something_to_do_with_sets: true } ], [ { something_to_do_with_maps: false } ]]
+
+   permutables.push([klass, predicate])
+   permutables.push([key, keyer])
+   permutables.push([edgeless, edge_basic, edge_predicate, edge_extractor])
+
 
    const PERMUTATE = process.env['PERMUTATE'] && process.env['PERMUTATE'] !== 'no'
    if   (PERMUTATE) {
@@ -509,17 +665,17 @@ function generatePermutations(){
          for (const possibility of possibilities) {
             if (0 === rest.length) {
                const    permutation = { labels: [], options: {}, helpers: {} }
-               _.assign(permutation.options, possibility.opts)
+               _.assign(permutation.options, possibility.options)
                _.assign(permutation.helpers, possibility.helpers)
-               permutation.labels.push(possibility.desc)
+               permutation.labels.push(possibility.name)
 
                results.push(permutation) }
 
             else for (const sub of permutate(rest)) {
                const    permutation = { labels: [], options: {}, helpers: {} }
-               _.assign(permutation.options, possibility.opts,    sub.options)
+               _.assign(permutation.options, possibility.options, sub.options)
                _.assign(permutation.helpers, possibility.helpers, sub.helpers)
-               permutation.labels.push(possibility.desc, ...sub.labels)
+               permutation.labels.push(possibility.name, ...sub.labels)
 
                results.push(permutation) }
          }
@@ -540,7 +696,7 @@ function generatePermutations(){
 
          let defaults_seen;
          for (let i = 0; i < permutables.length; i++) {
-            const possibilities = permutables[i]
+            const possibilities = permutables[i].slice()
 
             if (defaults_seen) possibilities.shift()
             defaults_seen = true
@@ -551,14 +707,18 @@ function generatePermutations(){
                const permutation  = { labels: [], options: {}, helpers: {} }
 
                for (let k = 0; k < permutables.length; k++) {
-                  if (k == i) continue;
-                  const normal_case = permutables[k][0]
+                  if (k === i) {
+                     _.assign(permutation.options, possibility.options)
+                     _.assign(permutation.helpers, possibility.helpers)
+                     permutation.labels.push(possibility.name)
+                  } else {
+                     const normal_case = permutables[k][0]
 
-                  _.assign(permutation.options, normal_case.opts)
-                  _.assign(permutation.helpers, normal_case.helpers) }
-
-               _.assign(permutation.options, possibility.opts)
-               _.assign(permutation.helpers, possibility.helpers)
+                     _.assign(permutation.options, normal_case.options)
+                     _.assign(permutation.helpers, normal_case.helpers)
+                     permutation.labels.push(normal_case.name)
+                  }
+               }
 
                results.push(permutation) }
          }
