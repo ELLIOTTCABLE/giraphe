@@ -9,13 +9,18 @@ language: node_js
 node_js:
  - "node"
  - "6"
+ - "5"
  - "4"
  - "0.12"
+ - "0.11"
 
 env:
    global:
     - BABEL_ENV=coverage
 
+
+before_install:
+ - case "$(npm --version)" in 1.*) npm install -g npm ;; esac
 
 before_script:
  - npm run-script build
