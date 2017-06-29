@@ -1,7 +1,7 @@
 {  "author"     : "ELLIOTTCABLE (http://ell.io/tt)"
 
  , "name"       : "giraphe"
- , "version"    : "2.0.0"
+ , "version"    : "2.0.1"
  , "license"    : "ISC"
 
  , "description": "A exceedingly-generic graph walking API."
@@ -11,7 +11,8 @@
 
  , "scripts": {
       "test"                   : "./test.sh"
-    , "prepare"                : "./build.sh"
+    , "prepare"                : "NODE_ENV=development ./build.sh"
+    , "prepublishOnly"         : "NODE_ENV=production  ./build.sh"
    }
 
  , "directories": {
