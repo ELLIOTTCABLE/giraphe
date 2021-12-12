@@ -97,6 +97,7 @@
       "mocha-fivemat-reporter": "^0.0.9",
       "nyc": "^11.0.2",
       "power-assert": "^1.4.4",
+      "prettier": "^2.5.1",
       "sinon": "^2.3.5"
    }
 }
