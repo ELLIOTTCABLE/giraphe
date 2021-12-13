@@ -78,8 +78,7 @@
    },
    "dependencies": {
       "babel-runtime": "^6.9.2",
-      "debug": "^2.6.8",
-      "lodash": "^4.13.1"
+      "debug": "^2.6.8"
    },
    "devDependencies": {
       "babel-cli": "^6.24.1",
