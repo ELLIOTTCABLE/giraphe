@@ -1,0 +1,22 @@
+{
+   "include": ["src/**/*.ts"],
+
+   "compilerOptions": {
+      "target": "ES2021",
+      "module": "ESNext",
+      "moduleResolution": "Node",
+
+      "strict": true,
+      "isolatedModules": true,
+
+      "noImplicitOverride": true,
+      "noImplicitReturns": true,
+      "forceConsistentCasingInFileNames": true,
+
+      "declaration": true,
+      "declarationMap": true,
+      "emitDeclarationOnly": true,
+
+      "outDir": "dist"
+   }
+}

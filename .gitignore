@@ -1,7 +1,6 @@
-node_modules
-*.js
-!*.es6.js*
+dist/
+
+node_modules/
 
 Docs/Coverage/*
 .nyc_output/*
-**/tags
