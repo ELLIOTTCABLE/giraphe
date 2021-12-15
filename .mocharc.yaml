@@ -1,0 +1,6 @@
+# spec: "Tests/**.tests.{mjs,cjs,js,ts}"
+ui: bdd
+reporter: "mocha-fivemat-reporter"
+require: ["source-map-support/register.js"]
+loader: "ts-node/esm"
+recursive: true

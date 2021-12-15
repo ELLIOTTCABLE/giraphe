@@ -1,0 +1,7 @@
+{
+  "extends": "@istanbuljs/nyc-config-typescript",
+  "all": true,
+  "report-dir": "./docs/coverage",
+  "statements": 90,
+  "branches": 90
+}

@@ -1,6 +1,6 @@
 import createDebug from "debug"
 
-import * as common from "./common"
+import * as common from "./common.js"
 
 // FIXME: Drop this with `unassert`
 let debug = createDebug("giraphe")

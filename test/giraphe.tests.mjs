@@ -1,11 +1,12 @@
 import Debug from 'debug'
 const  debug = Debug('giraphe:tests')
 
+// FIXME: Restore Babel / power-assert
 import assert from 'assert'
 import sinon, { match } from 'sinon'
 const __ = match.any
 
-import { Walker } from '../'
+import * as Walkers from '../src/giraphe.ts'
 
 
 // I produce tests generatively, iterating over the possible forms of invocation. (Some tests
@@ -20,7 +21,7 @@ let permutations = generatePermutations()
 //    `permutables` (i.e. something like `{ class: <blah>, key: 'id', ... }`),
 // 3. but when called with a `String`, i.e. `$("Hello")`, it suffixes that string with a description
 // 2. and exposes all of the helpers from the above permutations, i.e. `$.new()` or `$.key()`.
-describe("The Walker() constructor", function(){
+describe.skip("The Walker() constructor", function(){
 
    it("exists", function(){
       assert.ok(Walker)
@@ -81,7 +82,6 @@ describe("The Walker() constructor", function(){
          edge: { extractor: function(){} } }) })
    })
 
-
 }) // The Walker() constructor
 
 permuteTests(function($){
@@ -90,13 +90,13 @@ permuteTests(function($){
    describe($("A walk() function"), function(){
 
       it("instantiates", function(){
-         var walk = new Walker( $() )
+         var walk = new $.Walker( $() )
          assert(typeof walk === 'function')
       })
 
       it("fails if given no callbacks", function(){
          const root = $.new(); $.key(root)
-         var walk = new Walker( $() )
+         var walk = new $.Walker( $() )
 
          assert.throws(()=> walk(root) )
       })
@@ -104,7 +104,7 @@ permuteTests(function($){
     //if (!$.testing_map)
       it("returns an object representing a mapping", function(){
          const root = $.new(); $.key(root)
-         var walk = new Walker( $() )
+         var walk = new $.Walker( $() )
 
          var result = walk(root, new Function)
          assert(null != result && typeof result === 'object')
@@ -113,7 +113,7 @@ permuteTests(function($){
       if ($.testing_class)
       it("returns a mapping of keys to the given class", function(){
          const root = $.new(), root_key = $.key(root)
-         var walk = new Walker( $() )
+         var walk = new $.Walker( $() )
 
          var result = walk(root, new Function)
          assert(null != result    && typeof result === 'object')
@@ -122,7 +122,7 @@ permuteTests(function($){
 
       it("collects the root node, if it's not rejected", function(){
          const root = $.new(), key = $.key(root)
-         var walk = new Walker( $() )
+         var walk = new $.Walker( $() )
 
          var result = walk(root, function(){ return undefined })
          assert(result[key] === root)
@@ -131,7 +131,7 @@ permuteTests(function($){
       it("collects nodes returned by a callback (‘a supplyback’)", function(){
          const A = $.new(), B = $.new(), A_key = $.key(A), B_key = $.key(B)
          const supplyback = ()=>B
-         var walk = new Walker( $() )
+         var walk = new $.Walker( $() )
 
          var result = walk(A, supplyback)
          assert(result[A_key] === A)
@@ -145,7 +145,7 @@ permuteTests(function($){
          const first = ()=> A
              , second = ()=> B
 
-         var walk = new Walker( $() )
+         var walk = new $.Walker( $() )
          var rv = walk(root, first, second)
 
          assert.ok(rv)
@@ -162,7 +162,7 @@ permuteTests(function($){
          const supplier = node => [A, B]
              , filter = node => { if (node === A) return false }
 
-         var walk = new Walker( $() )
+         var walk = new $.Walker( $() )
          var rv = walk(root, supplier, filter)
 
          assert(rv[root_key] === root)
@@ -176,7 +176,7 @@ permuteTests(function($){
 
          const filter = ()=>{ return false }
 
-         var walk = new Walker( $() )
+         var walk = new $.Walker( $() )
          var rv = walk(root, filter)
 
          assert(Object.keys(rv).length === 0)
@@ -193,7 +193,7 @@ permuteTests(function($){
             if (this === A)    return A_to_B
          }
 
-         var walk = new Walker( $() )
+         var walk = new $.Walker( $() )
          var rv = walk(root, cb)
 
          assert.ok(rv)
@@ -211,7 +211,7 @@ permuteTests(function($){
          const supplier = node => [A, B]
              , aborter = node => { if (node === A) return Walker.abortIteration }
 
-         var walk = new Walker( $() )
+         var walk = new $.Walker( $() )
          var rv = walk(root, supplier, aborter)
 
          assert(rv === false)
@@ -229,7 +229,7 @@ permuteTests(function($){
 
          const spy = sinon.spy()
 
-         var walk = new Walker( $() )
+         var walk = new $.Walker( $() )
          var rv = walk(root, first, second, filter, spy)
 
          assert(spy.neverCalledWith(foo, root))
@@ -252,7 +252,7 @@ permuteTests(function($){
 
          const spy = sinon.spy()
 
-         var walk = new Walker( $() )
+         var walk = new $.Walker( $() )
          var rv = walk(root, first, second, filter, spy)
 
          assert(spy.neverCalledWith(sinon.match.same(root_to_foo)))
@@ -263,7 +263,7 @@ permuteTests(function($){
       })
 
       it("does not throw when partially-applied", function(){
-         var walk = new Walker( $() )
+         var walk = new $.Walker( $() )
 
          assert.doesNotThrow(()=> walk(function(){}) )
       })
@@ -271,7 +271,7 @@ permuteTests(function($){
       it("can be invoked without an additional immediate callback once partially-applied",
          function(){
             const root = $.new(); $.key(root)
-            var walk = new Walker( $() )
+            var walk = new $.Walker( $() )
 
             walk = walk(function(){})
 
@@ -282,7 +282,7 @@ permuteTests(function($){
       it("can be partially-applied with callbacks", function(){
          const root = $.new(); $.key(root)
          const spy = sinon.spy()
-         var walk = new Walker( $() )
+         var walk = new $.Walker( $() )
 
          walk = walk(spy)
          assert(!spy.called)
@@ -295,7 +295,7 @@ permuteTests(function($){
       it("partially-applies only to *further copies* of itself", function(){
          const root = $.new(); $.key(root)
          const spy = sinon.spy()
-             , original_walk = new Walker( $() )
+             , original_walk = new $.Walker( $() )
 
          const new_walk = original_walk(spy)
 
@@ -311,7 +311,7 @@ permuteTests(function($){
          const first  = sinon.spy(()=> assert(!second.called))
              , second = sinon.spy(()=> assert(!third.called))
              , third  = sinon.spy()
-         var walk = new Walker( $() )
+         var walk = new $.Walker( $() )
 
          walk = walk(first)
          assert(!first.called)
@@ -335,7 +335,7 @@ permuteTests(function($){
          they("get called on the passed initial node", function(){
             const root = $.new(); $.key(root)
             const cb = sinon.spy()
-            var walk = new Walker( $() )
+            var walk = new $.Walker( $() )
 
             walk(root, cb)
             assert(cb.calledOnce)
@@ -344,7 +344,7 @@ permuteTests(function($){
          they("are severally called", function(){
             const root = $.new(); $.key(root)
             const first = sinon.spy(), second = sinon.spy()
-            var walk = new Walker( $() )
+            var walk = new $.Walker( $() )
 
             walk(root, first, second)
             assert(first .calledOnce)
@@ -354,7 +354,7 @@ permuteTests(function($){
          they("are invoked with the current node as `this`", function(){
             const root = $.new(); $.key(root)
             const cb = sinon.spy()
-            var walk = new Walker( $() )
+            var walk = new $.Walker( $() )
 
             walk(root, cb)
             assert(cb.calledOn(root))
@@ -363,7 +363,7 @@ permuteTests(function($){
          they("also receive the current node as the first argument", function(){
             const root = $.new(); $.key(root)
             const cb = sinon.spy()
-            var walk = new Walker( $() )
+            var walk = new $.Walker( $() )
 
             walk(root, cb)
             assert(cb.calledWith(root))
@@ -372,7 +372,7 @@ permuteTests(function($){
          they("receive `null` instead of a ‘parent’ when processing the root node", function(){
             const root = $.new(); $.key(root)
             const cb = sinon.spy()
-            var walk = new Walker( $() )
+            var walk = new $.Walker( $() )
 
             walk(root, cb)
             assert(cb.calledWith(__, null))
@@ -382,7 +382,7 @@ permuteTests(function($){
             const parent = $.new(); $.key(parent)
             const child  = $.new(); $.key(child)
             const supplier = ()=>child, spy = sinon.spy()
-            var walk = new Walker( $() )
+            var walk = new $.Walker( $() )
 
             walk(parent, supplier, spy)
             assert(spy.calledWith(__, parent))
@@ -402,7 +402,7 @@ permuteTests(function($){
                assert(allbacks.indexOf(third) === 3)
             })
 
-            var walk = new Walker( $() )
+            var walk = new $.Walker( $() )
             walk(root, spy, first, second, third)
 
             assert(spy.called)
@@ -413,7 +413,7 @@ permuteTests(function($){
 
             const filter = ()=>{ return true }
 
-            var walk = new Walker( $() )
+            var walk = new $.Walker( $() )
             var rv = walk(root, filter)
 
             assert(rv[root_key] === root)
@@ -424,7 +424,7 @@ permuteTests(function($){
 
             const filter = ()=>{}
 
-            var walk = new Walker( $() )
+            var walk = new $.Walker( $() )
             var rv = walk(root, filter)
 
             assert(rv[root_key] === root)
@@ -435,7 +435,7 @@ permuteTests(function($){
 
             const filter = ()=>{ return false }
 
-            var walk = new Walker( $() )
+            var walk = new $.Walker( $() )
             var rv = walk(root, filter)
 
             assert(!(root_key in rv))
@@ -447,7 +447,7 @@ permuteTests(function($){
 
             const supplier = ()=>{ return other }
 
-            var walk = new Walker( $() )
+            var walk = new $.Walker( $() )
             var rv = walk(root, supplier)
 
             assert(rv[other_key] === other)
@@ -459,7 +459,7 @@ permuteTests(function($){
 
             const supplier = ()=>{ return [A, B, C] }
 
-            var walk = new Walker( $() )
+            var walk = new $.Walker( $() )
             var rv = walk(root, supplier)
 
             assert(rv[A_key] === A)
@@ -477,7 +477,7 @@ permuteTests(function($){
              , [C_key]: C
             } }
 
-            var walk = new Walker( $() )
+            var walk = new $.Walker( $() )
             var rv = walk(root, supplier)
 
             assert(rv[A_key] === A)
@@ -496,7 +496,7 @@ permuteTests(function($){
 
             const spy = sinon.spy()
 
-            var walk = new Walker( $() )
+            var walk = new $.Walker( $() )
             walk(root, supplier, filter, spy)
 
             assert(spy.calledWith(bar))
@@ -513,7 +513,7 @@ permuteTests(function($){
 
             const spy = sinon.spy()
 
-            var walk = new Walker( $() )
+            var walk = new $.Walker( $() )
             walk(root, supplier, aborter, spy)
 
             assert(spy.calledWith(root))
@@ -550,7 +550,7 @@ function generatePermutations(){
    // keys in `options` to add to the options-object passed to the `Walker()` constructor, and some
    // `helpers`-values to expose on `$` for examination or calling during tests.
    const klass = {
-      name: 'class'
+      name: 'Class'
     , options: { class: Node }
     , helpers: {
          testing_class: true
@@ -560,7 +560,7 @@ function generatePermutations(){
    }
 
    const predicate = {
-      name: 'pred'
+      name: 'Predicate'
     , options: { predicate: it => it.isNode  }
     , helpers: {
          testing_predicate: true
@@ -570,7 +570,7 @@ function generatePermutations(){
    }
 
    const key = {
-      name: 'key'
+      name: 'Key'
     , options: { key: 'id' }
     , helpers: {
          testing_key: true
@@ -579,7 +579,7 @@ function generatePermutations(){
    }
 
    const keyer = {
-      name: 'keyer'
+      name: 'Keyer'
     , options: { keyer: it => it[sym] }
     , helpers: {
          testing_keyer: true
@@ -588,10 +588,10 @@ function generatePermutations(){
    }
 
    // FIXME: Ugh, these aren't fully-permuted. w/e.
-   const edgeless = { name: 'edgeless', options: {} }
+   const edgeless = { name: 'Edgeless', options: {} }
 
    const edge_basic = {
-      name: 'edge'
+      name: 'Edge'
     , options: { edge: {class: Edge, extract_path: 'target'} }
     , helpers: {
          testing_edge: true
@@ -607,7 +607,7 @@ function generatePermutations(){
    }
 
    const edge_predicate = {
-      name: 'edge-pred'
+      name: 'Edgeicate'
     , options: { edge: {predicate: (it => it.isEdge), extract_path: 'target'} }
     , helpers: {
          testing_edge: true
@@ -619,7 +619,7 @@ function generatePermutations(){
    }
 
    const edge_extractor = {
-      name: 'edge-extractor'
+      name: 'Edgetractor'
     , options: { edge: {class: Edge, extractor: it => it[target_sym] } }
     , helpers: {
          testing_edge: true
@@ -641,9 +641,11 @@ function generatePermutations(){
    // interfaces; this will need to be tweaked not to permutate over other combinations.
  //, [[ { something_to_do_with_sets: true } ], [ { something_to_do_with_maps: false } ]]
 
+   permutables.push([edgeless, edge_basic, edge_predicate, edge_extractor])
    permutables.push([klass, predicate])
    permutables.push([key, keyer])
-   permutables.push([edgeless, edge_basic, edge_predicate, edge_extractor])
+
+   const omit_names = ['Edge', 'Class', 'Key']
 
 
    const PERMUTATE = process.env['PERMUTATE'] && process.env['PERMUTATE'] !== 'no'
@@ -667,6 +669,8 @@ function generatePermutations(){
                Object.assign(permutation.options, possibility.options)
                Object.assign(permutation.helpers, possibility.helpers)
                permutation.labels.push(possibility.name)
+               permutation.name = permutation.labels.filter(n => !omit_names.includes(n)).join('') + "Walker"
+               debug(`Generated (0 === rest.length): ${permutation.name}`)
 
                results.push(permutation) }
 
@@ -675,6 +679,8 @@ function generatePermutations(){
                Object.assign(permutation.options, possibility.options, sub.options)
                Object.assign(permutation.helpers, possibility.helpers, sub.helpers)
                permutation.labels.push(possibility.name, ...sub.labels)
+               permutation.name = permutation.labels.filter(n => !omit_names.includes(n)).join('') + "Walker"
+               debug(`Generated (0 !== rest.length): ${permutation.name}`)
 
                results.push(permutation) }
          }
@@ -710,12 +716,16 @@ function generatePermutations(){
                      Object.assign(permutation.options, possibility.options)
                      Object.assign(permutation.helpers, possibility.helpers)
                      permutation.labels.push(possibility.name)
+                     permutation.name = permutation.labels.filter(n => !omit_names.includes(n)).join('') + "Walker"
+                     debug(`Generated (k === i): ${permutation.name}`)
                   } else {
                      const normal_case = permutables[k][0]
 
                      Object.assign(permutation.options, normal_case.options)
                      Object.assign(permutation.helpers, normal_case.helpers)
                      permutation.labels.push(normal_case.name)
+                     permutation.name = permutation.labels.filter(n => !omit_names.includes(n)).join('') + "Walker"
+                     debug(`Generated (k !== i): ${permutation.name}`)
                   }
                }
 
@@ -733,8 +743,7 @@ function permuteTests(body){
    for (const p of permutations) {
       const $ = function(given_arg){
          if (typeof given_arg == 'string') {
-            const name = _.compact(p.labels).join('/')
-            return `${given_arg} (${name})` }
+            return `${given_arg} (${p.name})` }
 
          let options
          if (null != given_arg)
@@ -746,11 +755,15 @@ function permuteTests(body){
          return options }
 
       Object.assign($, p.helpers)
+
+      assert.ok(Walkers[p.name], `\`${p.name}\` should exist`)
+      $.Walker = Walkers[p.name]
+
       body.call(null, $)
    }
 
 }
 
 function rand(){
-   return _.random(0, Number.MAX_SAFE_INTEGER).toString()
+  return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER).toString()
 }
