@@ -1,5 +1,4 @@
 import Debug from 'debug'
-import _     from 'lodash'
 const  debug = Debug('giraphe:tests')
 
 import assert from 'assert'
@@ -665,16 +664,16 @@ function generatePermutations(){
          for (const possibility of possibilities) {
             if (0 === rest.length) {
                const    permutation = { labels: [], options: {}, helpers: {} }
-               _.assign(permutation.options, possibility.options)
-               _.assign(permutation.helpers, possibility.helpers)
+               Object.assign(permutation.options, possibility.options)
+               Object.assign(permutation.helpers, possibility.helpers)
                permutation.labels.push(possibility.name)
 
                results.push(permutation) }
 
             else for (const sub of permutate(rest)) {
                const    permutation = { labels: [], options: {}, helpers: {} }
-               _.assign(permutation.options, possibility.options, sub.options)
-               _.assign(permutation.helpers, possibility.helpers, sub.helpers)
+               Object.assign(permutation.options, possibility.options, sub.options)
+               Object.assign(permutation.helpers, possibility.helpers, sub.helpers)
                permutation.labels.push(possibility.name, ...sub.labels)
 
                results.push(permutation) }
@@ -708,14 +707,14 @@ function generatePermutations(){
 
                for (let k = 0; k < permutables.length; k++) {
                   if (k === i) {
-                     _.assign(permutation.options, possibility.options)
-                     _.assign(permutation.helpers, possibility.helpers)
+                     Object.assign(permutation.options, possibility.options)
+                     Object.assign(permutation.helpers, possibility.helpers)
                      permutation.labels.push(possibility.name)
                   } else {
                      const normal_case = permutables[k][0]
 
-                     _.assign(permutation.options, normal_case.options)
-                     _.assign(permutation.helpers, normal_case.helpers)
+                     Object.assign(permutation.options, normal_case.options)
+                     Object.assign(permutation.helpers, normal_case.helpers)
                      permutation.labels.push(normal_case.name)
                   }
                }
@@ -743,10 +742,10 @@ function permuteTests(body){
          else
              options = new Object
 
-         _.assign(options, p.options)
+         Object.assign(options, p.options)
          return options }
 
-      _.assign($, p.helpers)
+      Object.assign($, p.helpers)
       body.call(null, $)
    }
 
