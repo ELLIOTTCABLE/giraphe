@@ -2,7 +2,7 @@ import Debug from "debug"
 const debug = Debug("giraphe:tests")
 
 // FIXME: Restore Babel / power-assert
-import assert from "assert"
+import assert from "power-assert"
 import sinon, { match } from "sinon"
 const __ = match.any
 
