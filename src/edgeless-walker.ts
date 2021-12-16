@@ -128,6 +128,7 @@ function walk<N, K extends common.SelfReferentialKeys<N>>(
 
       // and ‘abort-backs’ are a special case, that immediately terminates the loop
       if (common.abortIteration === returned) {
+         debug("walk(): iteration aborted")
          return common.abortIteration
       }
 
