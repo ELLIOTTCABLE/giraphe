@@ -1,61 +1,61 @@
 export type KeysMatching<A, B> = { [K in keyof A]: A[K] extends B ? K : never }[keyof A]
 
-export type EdgelessSupplyback<N, K extends KeysMatching<N, string | number | symbol>> = (
+export type EdgelessSupplyback<N, IK extends KeysMatching<N, string | number | symbol>> = (
    this: N,
    via: N,
    parent: N | undefined,
-   callbacks: EdgelessUnknownCallback<N, K>[],
-) => N | N[] | Map<K, N> | typeof abortIteration
+   callbacks: EdgelessUnknownCallback<N, IK>[],
+) => N | N[] | Map<IK, N> | typeof abortIteration
 
-export type EdgelessFilterback<N, K extends KeysMatching<N, string | number | symbol>> = (
+export type EdgelessFilterback<N, IK extends KeysMatching<N, string | number | symbol>> = (
    this: N,
    via: N,
    parent: N | undefined,
-   callbacks: EdgelessUnknownCallback<N, K>[],
+   callbacks: EdgelessUnknownCallback<N, IK>[],
 ) => boolean | typeof abortIteration
 
 export type EdgelessUnknownCallback<
    N,
-   K extends KeysMatching<N, string | number | symbol>,
+   IK extends KeysMatching<N, string | number | symbol>,
 > = (
    this: N,
    via: N,
    parent: N | undefined,
-   callbacks: EdgelessUnknownCallback<N, K>[],
-) => boolean | N | N[] | Map<K, N> | typeof abortIteration
+   callbacks: EdgelessUnknownCallback<N, IK>[],
+) => boolean | N | N[] | Map<IK, N> | typeof abortIteration
 
-export type Keyer<N, K extends KeysMatching<N, string | number | symbol>> = (node: N) => K
+export type Keyer<N, IK extends KeysMatching<N, string | number | symbol>> = (node: N) => IK
 export type Predicate<N> = (arg: N) => boolean
 
-export type EdgelessOptions<N, K extends KeysMatching<N, string | number | symbol>> = {
+export type EdgelessOptions<N, IK extends KeysMatching<N, string | number | symbol>> = {
    class: new (...args: never) => N
-   key: K
-   callbacks?: EdgelessUnknownCallback<N, K>[]
+   key: IK
+   callbacks?: EdgelessUnknownCallback<N, IK>[]
    inspector?: (node: N) => string
 }
 
 export type EdgelessOptionsWithPredicate<
    N,
-   K extends KeysMatching<N, string | number | symbol>,
+   IK extends KeysMatching<N, string | number | symbol>,
 > = {
    predicate: Predicate<N>
-   key: K
+   key: IK
 }
 
 export type EdgelessOptionsWithKeyer<
    N,
-   K extends KeysMatching<N, string | number | symbol>,
+   IK extends KeysMatching<N, string | number | symbol>,
 > = {
    class: new (...args: never) => N
-   keyer: Keyer<N, K>
+   keyer: Keyer<N, IK>
 }
 
 export type EdgelessOptionsWithPredicateAndKeyer<
    N,
-   K extends KeysMatching<N, string | number | symbol>,
+   IK extends KeysMatching<N, string | number | symbol>,
 > = {
    predicate: Predicate<N>
-   keyer: Keyer<N, K>
+   keyer: Keyer<N, IK>
 }
 
 export function isMap(val: unknown): val is Map<any, any> {
