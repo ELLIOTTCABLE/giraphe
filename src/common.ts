@@ -1,5 +1,3 @@
-import type createDebug from "debug"
-
 export type KeysMatching<A, B> = { [K in keyof A]: A[K] extends B ? K : never }[keyof A]
 export type SelfReferentialKeys<A> = KeysMatching<A, A>
 
