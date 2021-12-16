@@ -5,19 +5,25 @@ import * as common from "./common.js"
 // FIXME: Drop this with `unassert`
 let debug = createDebug("giraphe")
 
-export type EdgelessWalkerFunction<N, K extends common.SelfReferentialKeys<N>> = (
+export type EdgelessWalkerFunction<
+   N,
+   K extends common.KeysMatching<N, string | number | symbol>,
+> = (
    root: N,
    ...callbacks: (common.EdgelessSupplyback<N, K> | common.EdgelessFilterback<N, K>)[]
 ) => false | Map<K, N>
 
-export type EdgelessWalkerMethod<N, K extends common.SelfReferentialKeys<N>> = (
+export type EdgelessWalkerMethod<
+   N,
+   K extends common.KeysMatching<N, string | number | symbol>,
+> = (
    this: N,
    ...callbacks: (common.EdgelessSupplyback<N, K> | common.EdgelessFilterback<N, K>)[]
 ) => false | Map<K, N>
 
 export default function EdgelessWalkerFunction<
    N,
-   K extends common.SelfReferentialKeys<N>
+   K extends common.KeysMatching<N, string | number | symbol>,
 >(options: common.EdgelessOptions<N, K>): EdgelessWalkerFunction<N, K> {
    const opts: common.EdgelessOptions<N, K> = Object.assign(
       Object.create(null),
@@ -53,9 +59,10 @@ export default function EdgelessWalkerFunction<
    }
 }
 
-export function EdgelessWalkerMethod<N, K extends common.SelfReferentialKeys<N>>(
-   options: common.EdgelessOptions<N, K>,
-): EdgelessWalkerMethod<N, K> {
+export function EdgelessWalkerMethod<
+   N,
+   K extends common.KeysMatching<N, string | number | symbol>,
+>(options: common.EdgelessOptions<N, K>): EdgelessWalkerMethod<N, K> {
    const opts: common.EdgelessOptions<N, K> = Object.assign(
       Object.create(null),
       {
@@ -90,7 +97,7 @@ export function EdgelessWalkerMethod<N, K extends common.SelfReferentialKeys<N>>
    }
 }
 
-function walk<N, K extends common.SelfReferentialKeys<N>>(
+function walk<N, K extends common.KeysMatching<N, string | number | symbol>>(
    opts: common.EdgelessOptions<N, K>,
    path: N[],
    cachebacks: common.EdgelessUnknownCallback<N, K>[],
@@ -103,7 +110,7 @@ function walk<N, K extends common.SelfReferentialKeys<N>>(
       parent = path[1]
 
    // TYPEME: Figure out how to repair typescript(2322) here; dump the coercion.
-   const ID = (current[opts.key] as unknown) as K
+   const ID = current[opts.key] as unknown as K
 
    if (ACCEPTED.has(ID)) return true
    else SEEN.set(ID, current)
@@ -136,7 +143,7 @@ function walk<N, K extends common.SelfReferentialKeys<N>>(
       // 1. a direct node (or edge),
       else if (returned instanceof opts.class) {
          // TYPEME: Figure out how to repair typescript(2322) here; dump the coercion.
-         const id = (returned[opts.key] as unknown) as K
+         const id = returned[opts.key] as unknown as K
 
          if (!DISCOVERED.has(id)) DISCOVERED.set(id, returned)
       }
@@ -146,7 +153,7 @@ function walk<N, K extends common.SelfReferentialKeys<N>>(
          for (let element of returned) {
             if (element instanceof opts.class) {
                // TYPEME: Figure out how to repair typescript(2322) here; dump the coercion.
-               const id = (element[opts.key] as unknown) as K
+               const id = element[opts.key] as unknown as K
 
                if (!DISCOVERED.has(id)) DISCOVERED.set(id, element)
             }
@@ -155,7 +162,7 @@ function walk<N, K extends common.SelfReferentialKeys<N>>(
       else if (common.isMap(returned))
          for (let [key, node] of returned) {
             // TYPEME: Figure out how to repair typescript(2322) here; dump the coercion.
-            console.assert(((node[opts.key] as unknown) as K) === key)
+            console.assert((node[opts.key] as unknown as K) === key)
 
             if (!DISCOVERED.has(key)) DISCOVERED.set(key, node)
          }
@@ -192,7 +199,7 @@ function walk<N, K extends common.SelfReferentialKeys<N>>(
    return false
 }
 
-function inspectPath<N, K extends common.SelfReferentialKeys<N>>(
+function inspectPath<N, K extends common.KeysMatching<N, string | number | symbol>>(
    opts: common.EdgelessOptions<N, K>,
    path: N[],
 ): string {

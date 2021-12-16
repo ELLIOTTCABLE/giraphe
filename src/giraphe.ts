@@ -3,7 +3,6 @@ import EdgelessWalker from "./edgeless-walker.js"
 
 export type {
    KeysMatching,
-   SelfReferentialKeys
 } from './common'
 
 export const abortIteration = common.abortIteration
