@@ -1,3 +1,4 @@
+import * as common from './common.js'
 import EdgelessWalker from "./edgeless-walker.js"
 
 export type {
@@ -5,10 +6,10 @@ export type {
    SelfReferentialKeys
 } from './common'
 
-export {
-   EdgelessWalker,
-}
+export const abortIteration = common.abortIteration
+export const doCaching = common.doCaching
+export const cachebackKey = common.cachebackKey
 
-export default {
+export {
    EdgelessWalker,
 }
