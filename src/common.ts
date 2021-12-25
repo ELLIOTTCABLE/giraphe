@@ -1,13 +1,19 @@
 export type KeysMatching<A, B> = { [K in keyof A]: A[K] extends B ? K : never }[keyof A]
 
-export type EdgelessSupplyback<N, IK extends KeysMatching<N, string | number | symbol>> = (
+export type EdgelessSupplyback<
+   N,
+   IK extends KeysMatching<N, string | number | symbol>,
+> = (
    this: N,
    via: N,
    parent: N | undefined,
    callbacks: EdgelessUnknownCallback<N, IK>[],
 ) => N | N[] | Map<IK, N> | typeof abortIteration
 
-export type EdgelessFilterback<N, IK extends KeysMatching<N, string | number | symbol>> = (
+export type EdgelessFilterback<
+   N,
+   IK extends KeysMatching<N, string | number | symbol>,
+> = (
    this: N,
    via: N,
    parent: N | undefined,
@@ -24,7 +30,9 @@ export type EdgelessUnknownCallback<
    callbacks: EdgelessUnknownCallback<N, IK>[],
 ) => boolean | N | N[] | Map<IK, N> | typeof abortIteration
 
-export type Keyer<N, IK extends KeysMatching<N, string | number | symbol>> = (node: N) => IK
+export type Keyer<N, IK extends KeysMatching<N, string | number | symbol>> = (
+   node: N,
+) => IK
 export type Predicate<N> = (arg: N) => boolean
 
 export type EdgelessOptions<N, IK extends KeysMatching<N, string | number | symbol>> = {
