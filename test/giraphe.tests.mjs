@@ -206,13 +206,15 @@ permuteTests(function ($) {
             B_key = $.key(B)
 
          const supplier = () => [A, B],
-            filter = (node) => {
-               if (node === A) return false
+            filter = function () {
+               if (this === A) return false
             }
 
          var walk = new $.Walker($())
          var rv = walk(root, supplier, filter)
 
+         console.dir(rv)
+         assert(rv.size === 2)
          assert(rv.get(root_key) === root)
          assert(rv.get(B_key) === B)
 
@@ -228,7 +230,7 @@ permuteTests(function ($) {
          var walk = new $.Walker($())
          var rv = walk(root, filter)
 
-         assert(Object.keys(rv).length === 0)
+         assert(rv.size === 0)
       })
 
       if ($.testing_edge)
@@ -251,7 +253,7 @@ permuteTests(function ($) {
             var rv = walk(root, cb)
 
             assert.ok(rv)
-            assert(Object.keys(rv).length === 3)
+            assert(rv.size === 3)
             assert(rv.get(root_key) === root)
             assert(rv.get(A_key) === A)
             assert(rv.get(B_key) === B)
@@ -265,9 +267,9 @@ permuteTests(function ($) {
             A_key = $.key(A),
             B_key = $.key(B)
 
-         const supplier = (node) => [A, B],
-            aborter = (node) => {
-               if (node === A) return Giraphe.abortIteration
+         const supplier = () => [A, B],
+            aborter = function () {
+               if (this === A) return Giraphe.abortIteration
             }
 
          var walk = new $.Walker($())
@@ -278,20 +280,20 @@ permuteTests(function ($) {
 
       it("will re-visit a previously-rejected node via a different path", () => {
          const root = $.new(),
-            root_key = $.key(root),
             foo = $.new(),
             bar = $.new(),
-            foo_key = $.key(foo),
-            bar_key = $.key(bar)
+            foo_key = $.key(foo)
 
-         const first = (node) => {
-               if (node === root) return [foo, bar]
+         $.key(root), $.key(bar)
+
+         const first = function () {
+               if (this === root) return [foo, bar]
             },
-            second = (node) => {
-               if (node === bar) return foo
+            second = function () {
+               if (this === bar) return foo
             },
-            filter = (node, parent) => {
-               if (parent === root && node === foo) return false
+            filter = function (_current, parent) {
+               if (parent === root && this === foo) return false
             }
 
          const spy = sinon.spy()
@@ -299,8 +301,16 @@ permuteTests(function ($) {
          var walk = new $.Walker($())
          var rv = walk(root, first, second, filter, spy)
 
-         assert(spy.neverCalledWith(foo, root))
-         assert(spy.calledWith(foo, bar))
+         // TODO:This can probably be done better with Sinon's matchers, etc ... somehow.
+         let calledOnFooViaRoot, calledOnFooViaBar
+         for (let call of spy.getCalls()) {
+            if (call.calledOn(foo)) {
+               if (call.calledWith(__, root)) calledOnFooViaRoot = true
+               if (call.calledWith(__, bar)) calledOnFooViaBar = true
+            }
+         }
+         assert(!calledOnFooViaRoot)
+         assert(calledOnFooViaBar)
 
          assert(rv.get(foo_key) === foo)
       })
@@ -445,15 +455,46 @@ permuteTests(function ($) {
             assert(cb.calledOn(root))
          })
 
-         they("also receive the current node as the first argument", () => {
-            const root = $.new()
-            $.key(root)
-            const cb = sinon.spy()
-            var walk = new $.Walker($())
+         if ($.testing_edge)
+            they("receive undefined if there is no edge for the first argument", () => {
+               const root = $.new()
+               $.key(root)
+               const cb = sinon.spy()
+               var walk = new $.Walker($())
 
-            walk(root, cb)
-            assert(cb.calledWith(root))
-         })
+               walk(root, cb)
+               assert(cb.calledWith(undefined))
+            })
+
+         if ($.testing_edge)
+            they("receive the current edge as the first argument", () => {
+               const root = $.new(),
+                  foo = $.new(),
+                  root_to_foo = $.edge_to(foo)
+
+               $.key(root), $.key(foo)
+
+               const supplier = function () {
+                  if (this === root) return root_to_foo
+               }
+
+               const spy = sinon.spy()
+
+               var walk = new $.Walker($())
+               walk(root, supplier, spy)
+
+               assert(spy.calledWith(root_to_foo))
+            })
+         else
+            they("receive the current node as the first argument", () => {
+               const root = $.new()
+               $.key(root)
+               const cb = sinon.spy()
+               var walk = new $.Walker($())
+
+               walk(root, cb)
+               assert(cb.calledWith(root))
+            })
 
          they(
             "receive `undefined` instead of a ‘parent’ when processing the root node",
@@ -604,15 +645,14 @@ permuteTests(function ($) {
             "are not invoked on a walk-step if a prior filter `rejects` the current node",
             () => {
                const root = $.new(),
-                  root_key = $.key(root),
                   foo = $.new(),
-                  bar = $.new(),
-                  foo_key = $.key(foo),
-                  bar_key = $.key(bar)
+                  bar = $.new()
 
-               const supplier = (node) => [foo, bar],
-                  filter = (node) => {
-                     if (node === foo) return false
+               $.key(root), $.key(foo), $.key(bar)
+
+               const supplier = () => [foo, bar],
+                  filter = function () {
+                     if (this === foo) return false
                   }
 
                const spy = sinon.spy()
@@ -620,22 +660,21 @@ permuteTests(function ($) {
                var walk = new $.Walker($())
                walk(root, supplier, filter, spy)
 
-               assert(spy.calledWith(bar))
-               assert(spy.neverCalledWith(foo))
+               assert(spy.calledOn(bar))
+               assert(!spy.calledOn(foo))
             },
          )
 
          they("are not invoked at all after a walk is aborted", () => {
             const root = $.new(),
-               root_key = $.key(root),
                foo = $.new(),
-               bar = $.new(),
-               foo_key = $.key(foo),
-               bar_key = $.key(bar)
+               bar = $.new()
 
-            const supplier = (node) => [foo, bar],
-               aborter = (node) => {
-                  if (node === foo) return Giraphe.abortIteration
+            $.key(root), $.key(foo), $.key(bar)
+
+            const supplier = () => [foo, bar],
+               aborter = function () {
+                  if (this === foo) return Giraphe.abortIteration
                }
 
             const spy = sinon.spy()
@@ -643,9 +682,9 @@ permuteTests(function ($) {
             var walk = new $.Walker($())
             walk(root, supplier, aborter, spy)
 
-            assert(spy.calledWith(root))
-            assert(spy.neverCalledWith(foo))
-            assert(spy.neverCalledWith(bar))
+            assert(spy.calledOn(root))
+            assert(spy.calledOn(foo) === false)
+            assert(spy.calledOn(bar) === false)
          })
       }) // ~ callbacks
    }) // A walk() function
@@ -770,9 +809,9 @@ function generatePermutations() {
    // interfaces; this will need to be tweaked not to permutate over other combinations.
    //, [[ { something_to_do_with_sets: true } ], [ { something_to_do_with_maps: false } ]]
 
-   permutables.push([edgeless, edge_basic, edge_predicate, edge_extractor])
-   permutables.push([klass, predicate])
-   permutables.push([key, keyer])
+   permutables.push([edgeless, edge_basic /* , edge_predicate, edge_extractor */])
+   permutables.push([klass /* , predicate */])
+   permutables.push([key /* , keyer */])
 
    const omit_names = ["Edge", "Class", "Key"]
 

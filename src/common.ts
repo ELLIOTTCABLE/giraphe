@@ -5,7 +5,7 @@ export type EdgelessSupplyback<
    IK extends KeysMatching<N, string | number | symbol>,
 > = (
    this: N,
-   via: N,
+   current: N,
    parent: N | undefined,
    callbacks: EdgelessUnknownCallback<N, IK>[],
 ) => N | N[] | Map<IK, N> | typeof abortIteration
@@ -15,7 +15,7 @@ export type EdgelessFilterback<
    IK extends KeysMatching<N, string | number | symbol>,
 > = (
    this: N,
-   via: N,
+   current: N,
    parent: N | undefined,
    callbacks: EdgelessUnknownCallback<N, IK>[],
 ) => boolean | typeof abortIteration
@@ -25,10 +25,46 @@ export type EdgelessUnknownCallback<
    IK extends KeysMatching<N, string | number | symbol>,
 > = (
    this: N,
-   via: N,
+   current: N,
    parent: N | undefined,
    callbacks: EdgelessUnknownCallback<N, IK>[],
 ) => boolean | N | N[] | Map<IK, N> | typeof abortIteration
+
+export type Supplyback<
+   N,
+   IK extends KeysMatching<N, string | number | symbol>,
+   E,
+   EK extends KeysMatching<E, N>,
+> = (
+   this: N,
+   via: E | undefined,
+   parent: N | undefined,
+   callbacks: UnknownCallback<N, IK, E, EK>[],
+) => N | N[] | E | E[] | Map<IK, N> | typeof abortIteration
+
+export type Filterback<
+   N,
+   IK extends KeysMatching<N, string | number | symbol>,
+   E,
+   EK extends KeysMatching<E, N>,
+> = (
+   this: N,
+   via: E | undefined,
+   parent: N | undefined,
+   callbacks: UnknownCallback<N, IK, E, EK>[],
+) => boolean | typeof abortIteration
+
+export type UnknownCallback<
+   N,
+   IK extends KeysMatching<N, string | number | symbol>,
+   E,
+   EK extends KeysMatching<E, N>,
+> = (
+   this: N,
+   via: E | undefined,
+   parent: N | undefined,
+   callbacks: UnknownCallback<N, IK, E, EK>[],
+) => boolean | N | N[] | E | E[] | Map<IK, N> | typeof abortIteration
 
 export type Keyer<N, IK extends KeysMatching<N, string | number | symbol>> = (
    node: N,
@@ -64,6 +100,22 @@ export type EdgelessOptionsWithPredicateAndKeyer<
 > = {
    predicate: Predicate<N>
    keyer: Keyer<N, IK>
+}
+
+export type Options<
+   N,
+   IK extends KeysMatching<N, string | number | symbol>,
+   E,
+   EK extends KeysMatching<E, N>,
+> = {
+   class: new (...args: never) => N
+   key: IK
+   edge: {
+      class: new (...args: never) => E
+      extract_path: EK
+   }
+   callbacks?: UnknownCallback<N, IK, E, EK>[]
+   inspector?: (node: N) => string
 }
 
 export function isMap(val: unknown): val is Map<any, any> {

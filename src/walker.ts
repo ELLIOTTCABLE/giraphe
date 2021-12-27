@@ -5,27 +5,33 @@ import * as common from "./common.js"
 // FIXME: Drop this with `unassert`
 let debug = createDebug("giraphe")
 
-export type EdgelessWalkerFunction<
+export type WalkerFunction<
    N,
    IK extends common.KeysMatching<N, string | number | symbol>,
+   E,
+   EK extends common.KeysMatching<E, N>,
 > = (
    root: N,
-   ...callbacks: (common.EdgelessSupplyback<N, IK> | common.EdgelessFilterback<N, IK>)[]
+   ...callbacks: (common.Supplyback<N, IK, E, EK> | common.Filterback<N, IK, E, EK>)[]
 ) => false | Map<IK, N>
 
-export type EdgelessWalkerMethod<
+export type WalkerMethod<
    N,
    IK extends common.KeysMatching<N, string | number | symbol>,
+   E,
+   EK extends common.KeysMatching<E, N>,
 > = (
    this: N,
-   ...callbacks: (common.EdgelessSupplyback<N, IK> | common.EdgelessFilterback<N, IK>)[]
+   ...callbacks: (common.Supplyback<N, IK, E, EK> | common.Filterback<N, IK, E, EK>)[]
 ) => false | Map<IK, N>
 
-export default function EdgelessWalkerFunction<
+export default function WalkerFunction<
    N,
    IK extends common.KeysMatching<N, string | number | symbol>,
->(options: common.EdgelessOptions<N, IK>): EdgelessWalkerFunction<N, IK> {
-   const opts: common.EdgelessOptions<N, IK> = Object.assign(
+   E,
+   EK extends common.KeysMatching<E, N>,
+>(options: common.Options<N, IK, E, EK>): WalkerFunction<N, IK, E, EK> {
+   const opts: common.Options<N, IK, E, EK> = Object.assign(
       Object.create(null),
       {
          callbacks: [],
@@ -35,7 +41,7 @@ export default function EdgelessWalkerFunction<
 
    return function invokeWalker(
       root: N,
-      ...callbacks: common.EdgelessUnknownCallback<N, IK>[]
+      ...callbacks: common.UnknownCallback<N, IK, E, EK>[]
    ): Map<IK, N> | false {
       if (opts.callbacks && 0 !== opts.callbacks.length) callbacks.push(...opts.callbacks)
 
@@ -51,7 +57,16 @@ export default function EdgelessWalkerFunction<
 
       const SEEN = new Map<IK, N>()
       const ACCEPTED = new Map<IK, N>()
-      const result = walk<N, IK>(opts, [root], [], callbacks, callbacks, SEEN, ACCEPTED)
+      const result = walk<N, IK, E, EK>(
+         opts,
+         [root],
+         undefined,
+         [],
+         callbacks,
+         callbacks,
+         SEEN,
+         ACCEPTED,
+      )
 
       if (common.abortIteration === result) return false
 
@@ -59,11 +74,13 @@ export default function EdgelessWalkerFunction<
    }
 }
 
-export function EdgelessWalkerMethod<
+export function WalkerMethod<
    N,
    IK extends common.KeysMatching<N, string | number | symbol>,
->(options: common.EdgelessOptions<N, IK>): EdgelessWalkerMethod<N, IK> {
-   const opts: common.EdgelessOptions<N, IK> = Object.assign(
+   E,
+   EK extends common.KeysMatching<E, N>,
+>(options: common.Options<N, IK, E, EK>): WalkerMethod<N, IK, E, EK> {
+   const opts: common.Options<N, IK, E, EK> = Object.assign(
       Object.create(null),
       {
          callbacks: [],
@@ -73,7 +90,7 @@ export function EdgelessWalkerMethod<
 
    return function invokeWalker(
       this: N,
-      ...callbacks: common.EdgelessUnknownCallback<N, IK>[]
+      ...callbacks: common.UnknownCallback<N, IK, E, EK>[]
    ): Map<IK, N> | false {
       if (opts.callbacks && 0 !== opts.callbacks.length) callbacks.push(...opts.callbacks)
 
@@ -89,7 +106,16 @@ export function EdgelessWalkerMethod<
 
       const SEEN = new Map<IK, N>()
       const ACCEPTED = new Map<IK, N>()
-      const result = walk<N, IK>(opts, [this], [], callbacks, callbacks, SEEN, ACCEPTED)
+      const result = walk<N, IK, E, EK>(
+         opts,
+         [this],
+         undefined,
+         [],
+         callbacks,
+         callbacks,
+         SEEN,
+         ACCEPTED,
+      )
 
       if (common.abortIteration === result) return false
 
@@ -97,12 +123,18 @@ export function EdgelessWalkerMethod<
    }
 }
 
-function walk<N, IK extends common.KeysMatching<N, string | number | symbol>>(
-   opts: common.EdgelessOptions<N, IK>,
+function walk<
+   N,
+   IK extends common.KeysMatching<N, string | number | symbol>,
+   E,
+   EK extends common.KeysMatching<E, N>,
+>(
+   opts: common.Options<N, IK, E, EK>,
    path: N[],
-   cachebacks: common.EdgelessUnknownCallback<N, IK>[],
-   runbacks: common.EdgelessUnknownCallback<N, IK>[],
-   allbacks: common.EdgelessUnknownCallback<N, IK>[],
+   via: E | undefined,
+   cachebacks: common.UnknownCallback<N, IK, E, EK>[],
+   runbacks: common.UnknownCallback<N, IK, E, EK>[],
+   allbacks: common.UnknownCallback<N, IK, E, EK>[],
    SEEN: Map<IK, N>,
    ACCEPTED: Map<IK, N>,
 ): boolean | typeof common.abortIteration {
@@ -117,11 +149,11 @@ function walk<N, IK extends common.KeysMatching<N, string | number | symbol>>(
 
    debug(`walk(${ID}):`, inspectPath(opts, path))
 
-   const DISCOVERED = new Map<IK, N>()
+   const DISCOVERED = new Map<IK, { node: N; edges: (E | undefined)[] }>()
    let rejected = false
 
    for (let [idx, callback] of runbacks.entries()) {
-      const returned = callback.call(current, current, parent, allbacks)
+      const returned = callback.call(current, via, parent, allbacks)
       debug(`walk(${ID}): callback ${idx} returned: `, returned)
 
       // If it returns a boolean, or nothing at all, then it's a ‘filter-back’,
@@ -142,36 +174,56 @@ function walk<N, IK extends common.KeysMatching<N, string | number | symbol>>(
 
       // else, it's a ‘supply-back’! These return either,
       // 1. a direct node (or edge),
-      else if (returned instanceof opts.class) {
+      else if (returned instanceof opts.edge.class) {
+         // TYPEME: Figure out how to repair typescript(2322) here; dump the coercion.
+         const node = returned[opts.edge.extract_path] as unknown as N,
+            id = node[opts.key] as unknown as IK
+
+         const entry = DISCOVERED.get(id)
+         if (null == entry) DISCOVERED.set(id, { node: node, edges: [returned] })
+         else entry.edges.push(returned)
+      } else if (returned instanceof opts.class) {
          // TYPEME: Figure out how to repair typescript(2322) here; dump the coercion.
          const id = returned[opts.key] as unknown as IK
 
-         if (!DISCOVERED.has(id)) DISCOVERED.set(id, returned)
+         if (!DISCOVERED.has(id)) DISCOVERED.set(id, { node: returned, edges: [] })
       }
 
       // 2. an `Array` of nodes / edges,
-      else if (Array.isArray(returned))
+      else if (Array.isArray(returned)) {
          for (let element of returned) {
-            if (element instanceof opts.class) {
+            if (element instanceof opts.edge.class) {
+               // TYPEME: Figure out how to repair typescript(2322) here; dump the coercion.
+               const node = element[opts.edge.extract_path] as unknown as N,
+                  id = node[opts.key] as unknown as IK
+
+               const entry = DISCOVERED.get(id)
+               if (null == entry) DISCOVERED.set(id, { node: node, edges: [element] })
+               else entry.edges.push(element)
+            } else if (element instanceof opts.class) {
                // TYPEME: Figure out how to repair typescript(2322) here; dump the coercion.
                const id = element[opts.key] as unknown as IK
 
-               if (!DISCOVERED.has(id)) DISCOVERED.set(id, element)
-            }
+               if (!DISCOVERED.has(id)) DISCOVERED.set(id, { node: element, edges: [] })
+            } else
+               throw new TypeError(
+                  "Supplyback return-array contains illegal value; expecting Node or Edge.",
+               )
          }
+      }
       // 3. or a Map of keys-to-nodes.
       else if (common.isMap(returned))
          for (let [key, node] of returned) {
             // TYPEME: Figure out how to repair typescript(2322) here; dump the coercion.
             console.assert((node[opts.key] as unknown as IK) === key)
 
-            if (!DISCOVERED.has(key)) DISCOVERED.set(key, node)
+            if (!DISCOVERED.has(key)) DISCOVERED.set(key, { node: node, edges: [] })
          }
-      else {
+      else
          throw new TypeError(
-            "Supplyback returned illegal value: expecting Node, Node[], or Map<IK, Node>.",
+            "Supplyback returned illegal value: " +
+               "expecting Node, Edge, Node[], Edge[], or Map<K, Node>.",
          )
-      }
    }
 
    // If one of the filter-backs rejected the *current* node, we simply return now ...
@@ -181,29 +233,37 @@ function walk<N, IK extends common.KeysMatching<N, string | number | symbol>>(
    ACCEPTED.set(ID, current)
 
    // and then we traverse!
-   for (let [_key, node] of DISCOVERED) {
+   for (let [_key, { node, edges }] of DISCOVERED) {
       const sub_path = path.slice()
       sub_path.unshift(node)
 
-      const result = walk<N, IK>(
-         opts,
-         sub_path,
-         cachebacks,
-         runbacks,
-         allbacks,
-         SEEN,
-         ACCEPTED,
-      )
-      if (common.abortIteration === result) return common.abortIteration
+      if (edges.length === 0) edges.push(undefined)
+
+      for (let edge of edges) {
+         const result = walk<N, IK, E, EK>(
+            opts,
+            sub_path,
+            edge,
+            cachebacks,
+            runbacks,
+            allbacks,
+            SEEN,
+            ACCEPTED,
+         )
+
+         if (common.abortIteration === result) return common.abortIteration
+      }
    }
 
    return false
 }
 
-function inspectPath<N, IK extends common.KeysMatching<N, string | number | symbol>>(
-   opts: common.EdgelessOptions<N, IK>,
-   path: N[],
-): string {
+function inspectPath<
+   N,
+   IK extends common.KeysMatching<N, string | number | symbol>,
+   E,
+   EK extends common.KeysMatching<E, N>,
+>(opts: common.Options<N, IK, E, EK>, path: N[]): string {
    const path_bits = path
       .slice()
       .reverse()
