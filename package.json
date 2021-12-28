@@ -12,6 +12,13 @@
       "./*": "./dist/*.js",
       "./package.json": "./package.json"
    },
+   "files": [
+      "README.markdown",
+      "dist/*",
+      "test/*",
+      "src/*",
+      "tsconfig.json"
+   ],
    "scripts": {
       "test": "tsc && nyc mocha"
    },
