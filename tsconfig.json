@@ -3,8 +3,8 @@
 
    "compilerOptions": {
       "target": "ES2021",
-      "module": "ESNext",
-      "moduleResolution": "Node",
+      "module": "Node12",
+      "moduleResolution": "Node12",
 
       "strict": true,
       "isolatedModules": true,
@@ -15,7 +15,6 @@
 
       "declaration": true,
       "declarationMap": true,
-      "emitDeclarationOnly": true,
 
       "outDir": "dist"
    }

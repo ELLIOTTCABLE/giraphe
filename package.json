@@ -5,8 +5,13 @@
    "license": "ISC",
    "description": "A exceedingly-generic graph walking API.",
    "repository": "ELLIOTTCABLE/giraphe",
-   "main": "./dist/giraphe.mjs",
    "type": "module",
+   "main": "./dist/giraphe.js",
+   "exports": {
+      ".": "./dist/giraphe.js",
+      "./*": "./dist/*.js",
+      "./package.json": "./package.json"
+   },
    "scripts": {
       "test": "tsc && nyc mocha"
    },
@@ -32,6 +37,6 @@
       "sinon": "^12.0.1",
       "source-map-support": "^0.5.21",
       "ts-node": "^10.4.0",
-      "typescript": "^4.5.3"
+      "typescript": "^4.6.0-dev.20211227"
    }
 }

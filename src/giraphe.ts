@@ -2,7 +2,7 @@ import * as common from "./common.js"
 import EdgelessWalker from "./edgeless-walker.js"
 import Walker from "./walker.js"
 
-export type { KeysMatching } from "./common"
+export type { KeysMatching } from "./common.js"
 
 export const abortIteration = common.abortIteration
 export const doCaching = common.doCaching
