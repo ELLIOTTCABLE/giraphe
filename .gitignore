@@ -1,5 +1,7 @@
 dist/
 
+giraphe-*.tgz
+
 node_modules/
 
 Docs/Coverage/*
