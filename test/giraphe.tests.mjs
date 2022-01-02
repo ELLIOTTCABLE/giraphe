@@ -213,7 +213,6 @@ permuteTests(function ($) {
          var walk = new $.Walker($())
          var rv = walk(root, supplier, filter)
 
-         console.dir(rv)
          assert(rv.size === 2)
          assert(rv.get(root_key) === root)
          assert(rv.get(B_key) === B)
@@ -596,6 +595,25 @@ permuteTests(function ($) {
             assert(rv.get(other_key) === other)
          })
 
+         if ($.testing_edge)
+            they(
+               "may collect an individual node by returning an edge pointing to it",
+               () => {
+                  const root = $.new(),
+                     other = $.new(),
+                     root_key = $.key(root),
+                     other_key = $.key(other),
+                     root_to_other = $.edge_to(other)
+
+                  const supplier = () => root_to_other
+
+                  var walk = new $.Walker($())
+                  var rv = walk(root, supplier)
+
+                  assert(rv.get(other_key) === other)
+               },
+            )
+
          they("may collect nodes by returning them in an Array", () => {
             const root = $.new(),
                A = $.new(),
@@ -615,6 +633,26 @@ permuteTests(function ($) {
             assert(rv.get(B_key) === B)
             assert(rv.get(C_key) === C)
          })
+
+         if ($.testing_edge)
+            they("may collect nodes by returning edges to them in an Array", () => {
+               const root = $.new(),
+                  A = $.new(),
+                  B = $.new(),
+                  root_key = $.key(root),
+                  A_key = $.key(A),
+                  B_key = $.key(B),
+                  root_to_A = $.edge_to(A),
+                  root_to_B = $.edge_to(B)
+
+               const supplier = () => [root_to_A, root_to_B]
+
+               var walk = new $.Walker($())
+               var rv = walk(root, supplier)
+
+               assert(rv.get(A_key) === A)
+               assert(rv.get(B_key) === B)
+            })
 
          they("may collect nodes by returning them in an object-mapping", () => {
             const root = $.new(),
