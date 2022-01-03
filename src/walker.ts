@@ -9,7 +9,7 @@ export type WalkerFunction<
    N,
    IK extends common.KeysMatching<N, string | number | symbol>,
    E,
-   EK extends common.KeysMatching<E, N>,
+   EK extends common.OptionalKeysMatching<E, N>,
 > = (
    root: N,
    ...callbacks: (common.Supplyback<N, IK, E, EK> | common.Filterback<N, IK, E, EK>)[]
@@ -19,7 +19,7 @@ export type WalkerMethod<
    N,
    IK extends common.KeysMatching<N, string | number | symbol>,
    E,
-   EK extends common.KeysMatching<E, N>,
+   EK extends common.OptionalKeysMatching<E, N>,
 > = (
    this: N,
    ...callbacks: (common.Supplyback<N, IK, E, EK> | common.Filterback<N, IK, E, EK>)[]
@@ -29,7 +29,7 @@ export default function WalkerFunction<
    N,
    IK extends common.KeysMatching<N, string | number | symbol>,
    E,
-   EK extends common.KeysMatching<E, N>,
+   EK extends common.OptionalKeysMatching<E, N>,
 >(options: common.Options<N, IK, E, EK>): WalkerFunction<N, IK, E, EK> {
    const opts: common.Options<N, IK, E, EK> = Object.assign(
       Object.create(null),
@@ -78,7 +78,7 @@ export function WalkerMethod<
    N,
    IK extends common.KeysMatching<N, string | number | symbol>,
    E,
-   EK extends common.KeysMatching<E, N>,
+   EK extends common.OptionalKeysMatching<E, N>,
 >(options: common.Options<N, IK, E, EK>): WalkerMethod<N, IK, E, EK> {
    const opts: common.Options<N, IK, E, EK> = Object.assign(
       Object.create(null),
@@ -127,7 +127,7 @@ function walk<
    N,
    IK extends common.KeysMatching<N, string | number | symbol>,
    E,
-   EK extends common.KeysMatching<E, N>,
+   EK extends common.OptionalKeysMatching<E, N>,
 >(
    opts: common.Options<N, IK, E, EK>,
    path: N[],
@@ -140,6 +140,8 @@ function walk<
 ): boolean | typeof common.abortIteration {
    const current = path[0],
       parent = path[1]
+
+   if (null == current) return false
 
    // TYPEME: Figure out how to repair typescript(2322) here; dump the coercion.
    const ID = current[opts.key] as unknown as IK
@@ -192,7 +194,8 @@ function walk<
       // 2. an `Array` of nodes / edges,
       else if (Array.isArray(returned)) {
          for (let element of returned) {
-            if (element instanceof opts.edge.class) {
+            if (null == element) continue
+            else if (element instanceof opts.edge.class) {
                // TYPEME: Figure out how to repair typescript(2322) here; dump the coercion.
                const node = element[opts.edge.extract_path] as unknown as N,
                   id = node[opts.key] as unknown as IK
@@ -262,7 +265,7 @@ function inspectPath<
    N,
    IK extends common.KeysMatching<N, string | number | symbol>,
    E,
-   EK extends common.KeysMatching<E, N>,
+   EK extends common.OptionalKeysMatching<E, N>,
 >(opts: common.Options<N, IK, E, EK>, path: N[]): string {
    const path_bits = path
       .slice()

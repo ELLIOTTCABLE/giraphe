@@ -1,4 +1,7 @@
 export type KeysMatching<A, B> = { [K in keyof A]: A[K] extends B ? K : never }[keyof A]
+export type OptionalKeysMatching<A, B> = {
+   [K in keyof A]: A[K] extends B | undefined ? K : never
+}[keyof A]
 
 export type EdgelessSupplyback<
    N,
@@ -8,7 +11,7 @@ export type EdgelessSupplyback<
    current: N,
    parent: N | undefined,
    callbacks: EdgelessUnknownCallback<N, IK>[],
-) => N | N[] | Map<IK, N> | typeof abortIteration
+) => undefined | N | (N | undefined)[] | Map<IK, N> | typeof abortIteration
 
 export type EdgelessFilterback<
    N,
@@ -28,25 +31,32 @@ export type EdgelessUnknownCallback<
    current: N,
    parent: N | undefined,
    callbacks: EdgelessUnknownCallback<N, IK>[],
-) => boolean | N | N[] | Map<IK, N> | typeof abortIteration
+) => undefined | boolean | N | (N | undefined)[] | Map<IK, N> | typeof abortIteration
 
 export type Supplyback<
    N,
    IK extends KeysMatching<N, string | number | symbol>,
    E,
-   EK extends KeysMatching<E, N>,
+   EK extends OptionalKeysMatching<E, N>,
 > = (
    this: N,
    via: E | undefined,
    parent: N | undefined,
    callbacks: UnknownCallback<N, IK, E, EK>[],
-) => N | N[] | E | E[] | Map<IK, N> | typeof abortIteration
+) =>
+   | undefined
+   | E
+   | (E | undefined)[]
+   | N
+   | (N | undefined)[]
+   | Map<IK, N>
+   | typeof abortIteration
 
 export type Filterback<
    N,
    IK extends KeysMatching<N, string | number | symbol>,
    E,
-   EK extends KeysMatching<E, N>,
+   EK extends OptionalKeysMatching<E, N>,
 > = (
    this: N,
    via: E | undefined,
@@ -58,13 +68,21 @@ export type UnknownCallback<
    N,
    IK extends KeysMatching<N, string | number | symbol>,
    E,
-   EK extends KeysMatching<E, N>,
+   EK extends OptionalKeysMatching<E, N>,
 > = (
    this: N,
    via: E | undefined,
    parent: N | undefined,
    callbacks: UnknownCallback<N, IK, E, EK>[],
-) => boolean | N | N[] | E | E[] | Map<IK, N> | typeof abortIteration
+) =>
+   | undefined
+   | boolean
+   | E
+   | (E | undefined)[]
+   | N
+   | (N | undefined)[]
+   | Map<IK, N>
+   | typeof abortIteration
 
 export type Keyer<N, IK extends KeysMatching<N, string | number | symbol>> = (
    node: N,
@@ -106,7 +124,7 @@ export type Options<
    N,
    IK extends KeysMatching<N, string | number | symbol>,
    E,
-   EK extends KeysMatching<E, N>,
+   EK extends OptionalKeysMatching<E, N>,
 > = {
    class: new (...args: never) => N
    key: IK
@@ -118,7 +136,7 @@ export type Options<
    inspector?: (node: N) => string
 }
 
-export function isMap(val: unknown): val is Map<any, any> {
+export function isMap(val: unknown): val is Map<unknown, unknown> {
    return !!val && Object.prototype.toString.call(val) === "[object Map]"
 }
 

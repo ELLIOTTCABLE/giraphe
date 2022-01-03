@@ -109,6 +109,8 @@ function walk<N, IK extends common.KeysMatching<N, string | number | symbol>>(
    const current = path[0],
       parent = path[1]
 
+   if (null == current) return false
+
    // TYPEME: Figure out how to repair typescript(2322) here; dump the coercion.
    const ID = current[opts.key] as unknown as IK
 
@@ -152,7 +154,8 @@ function walk<N, IK extends common.KeysMatching<N, string | number | symbol>>(
       // 2. an `Array` of nodes / edges,
       else if (Array.isArray(returned))
          for (let element of returned) {
-            if (element instanceof opts.class) {
+            if (null == element) continue
+            else if (element instanceof opts.class) {
                // TYPEME: Figure out how to repair typescript(2322) here; dump the coercion.
                const id = element[opts.key] as unknown as IK
 

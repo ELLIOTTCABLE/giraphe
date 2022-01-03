@@ -634,6 +634,54 @@ permuteTests(function ($) {
             assert(rv.get(C_key) === C)
          })
 
+         they("may include empty values in the returned node-Array", () => {
+            const root = $.new(),
+               A = $.new(),
+               B = $.new(),
+               root_key = $.key(root),
+               A_key = $.key(A),
+               B_key = $.key(B)
+
+            const supplier = () => {
+               const arr = new Array()
+               arr[0] = A
+               arr[5] = B
+               return arr
+            }
+
+            var walk = new $.Walker($())
+            var rv = walk(root, supplier)
+
+            assert(rv.size === 3)
+            assert(rv.get(A_key) === A)
+            assert(rv.get(B_key) === B)
+         })
+
+         if ($.testing_edge)
+            they("may collect nodes by returning edges to them in an Array", () => {
+               const root = $.new(),
+                  A = $.new(),
+                  B = $.new(),
+                  root_key = $.key(root),
+                  A_key = $.key(A),
+                  B_key = $.key(B),
+                  root_to_A = $.edge_to(A),
+                  root_to_B = $.edge_to(B)
+
+               const supplier = () => {
+                  const arr = new Array()
+                  arr[0] = root_to_A
+                  arr[5] = root_to_B
+                  return arr
+               }
+
+               var walk = new $.Walker($())
+               var rv = walk(root, supplier)
+
+               assert(rv.get(A_key) === A)
+               assert(rv.get(B_key) === B)
+            })
+
          if ($.testing_edge)
             they("may collect nodes by returning edges to them in an Array", () => {
                const root = $.new(),
