@@ -1,11 +1,24 @@
-import * as common from "./common.js"
-import EdgelessWalker from "./edgeless-walker.js"
-import Walker from "./walker.js"
+import { abortIteration, doCaching, cachebackKey } from "./common.js"
+import EdgelessWalkerFunction, { EdgelessWalkerMethod } from "./edgeless-walker.js"
+import WalkerFunction, { WalkerMethod } from "./walker.js"
 
-export type { KeysMatching } from "./common.js"
+export type {
+   KeysMatching,
+   OptionalKeysMatching,
+   EdgelessFilterback,
+   EdgelessSupplyback,
+   Filterback,
+   Supplyback,
+} from "./common.js"
 
-export const abortIteration = common.abortIteration
-export const doCaching = common.doCaching
-export const cachebackKey = common.cachebackKey
-
-export { EdgelessWalker, Walker }
+export {
+   // Symbols
+   abortIteration,
+   doCaching,
+   cachebackKey,
+   // Walker-constructors
+   EdgelessWalkerFunction,
+   EdgelessWalkerMethod,
+   WalkerFunction,
+   WalkerMethod,
+}

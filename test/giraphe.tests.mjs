@@ -1031,8 +1031,8 @@ function permuteTests(body) {
 
       Object.assign($, p.helpers)
 
-      assert.ok(Giraphe[p.name], `\`${p.name}\` should exist`)
-      $.Walker = Giraphe[p.name]
+      assert.ok(Giraphe[p.name + "Function"], `\`${p.name}Function\` should exist`)
+      $.Walker = Giraphe[p.name + "Function"]
 
       body.call(null, $)
    }
